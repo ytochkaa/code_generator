@@ -4,109 +4,120 @@
 #include <string>
 #include <vector>
 
-class Unit {
+class Unit
+{
 public:
     using Flags = unsigned int;
 
-public:
     virtual ~Unit() = default;
 
-    virtual void add( const std::shared_ptr< Unit >&, Flags ) {
-        throw std::runtime_error( "Not supported" );
+    virtual void add(const std::shared_ptr<Unit>&, Flags)
+    {
+        throw std::runtime_error("Not supported");
     }
 
-    virtual std::string compile( unsigned int level = 0 ) const = 0;
+    virtual std::string compile(unsigned int level = 0) const = 0;
 
 protected:
-    virtual std::string generateShift( unsigned int level ) const {
-        static const auto DEFAULT_SHIFT = "    ";
+    virtual std::string generateShift(unsigned int level) const
+    {
         std::string result;
-        for( unsigned int i = 0; i < level; ++i ) {
-            result += DEFAULT_SHIFT;
+        for (unsigned int i = 0; i < level; ++i) {
+            result += "    ";
         }
         return result;
     }
 };
 
-class ClassUnit : public Unit {
+class ClassUnit : public Unit
+{
 public:
-    enum AccessModifier {
+    enum AccessModifier
+    {
         PUBLIC,
         PROTECTED,
         PRIVATE
     };
-    static const std::vector< std::string > ACCESS_MODIFIERS;
+    static const std::vector<std::string> ACCESS_MODIFIERS;
 
-public:
-    explicit ClassUnit( const std::string& name ) : m_name( name ) {
-        m_fields.resize( ACCESS_MODIFIERS.size() );
+    explicit ClassUnit(const std::string& name)
+        : m_name(name)
+    {
+        m_fields.resize(ACCESS_MODIFIERS.size());
     }
 
-    void add( const std::shared_ptr< Unit >& unit, Flags flags ) {
+    void add(const std::shared_ptr<Unit>& unit, Flags flags) override
+    {
         int accessModifier = PRIVATE;
-        if( flags < ACCESS_MODIFIERS.size() ) {
+        if (flags < ACCESS_MODIFIERS.size()) {
             accessModifier = flags;
         }
-        m_fields[ accessModifier ].push_back( unit );
+        m_fields[accessModifier].push_back(unit);
     }
 
-    std::string compile( unsigned int level = 0 ) const {
-        std::string result = generateShift( level ) + "class " + m_name + " {\n";
-        for( size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i ) {
-            if( m_fields[ i ].empty() ) {
+    std::string compile(unsigned int level = 0) const override
+    {
+        std::string result = generateShift(level) + "class " + m_name + " {\n";
+        for (size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i) {
+            if (m_fields[i].empty()) {
                 continue;
             }
-            result += ACCESS_MODIFIERS[ i ] + ":\n";
-            for( const auto& f : m_fields[ i ] ) {
-                result += f->compile( level + 1 );
+            result += ACCESS_MODIFIERS[i] + ":\n";
+            for (const auto& field : m_fields[i]) {
+                result += field->compile(level + 1);
             }
             result += "\n";
         }
-        result += generateShift( level ) + "};\n";
+        result += generateShift(level) + "};\n";
         return result;
     }
 
 private:
     std::string m_name;
-    using Fields = std::vector< std::shared_ptr< Unit > >;
-    std::vector< Fields > m_fields;
+    std::vector<std::vector<std::shared_ptr<Unit>>> m_fields;
 };
 
-const std::vector< std::string > ClassUnit::ACCESS_MODIFIERS = { "public", "protected", "private" };
+const std::vector<std::string> ClassUnit::ACCESS_MODIFIERS = {"public", "protected", "private"};
 
-class MethodUnit : public Unit {
+class MethodUnit : public Unit
+{
 public:
-    enum Modifier {
-        STATIC  = 1,
-        CONST   = 1 << 1,
+    enum Modifier
+    {
+        STATIC = 1,
+        CONST = 1 << 1,
         VIRTUAL = 1 << 2
     };
 
-public:
-    MethodUnit( const std::string& name, const std::string& returnType, Flags flags ) :
-        m_name( name ), m_returnType( returnType ), m_flags( flags ) {}
-
-    void add( const std::shared_ptr< Unit >& unit, Flags /* flags */ = 0 ) {
-        m_body.push_back( unit );
+    MethodUnit(const std::string& name, const std::string& returnType, Flags flags)
+        : m_name(name)
+        , m_returnType(returnType)
+        , m_flags(flags)
+    {
     }
 
-    std::string compile( unsigned int level = 0 ) const {
-        std::string result = generateShift( level );
-        if( m_flags & STATIC ) {
+    void add(const std::shared_ptr<Unit>& unit, Flags = 0) override
+    {
+        m_body.push_back(unit);
+    }
+
+    std::string compile(unsigned int level = 0) const override
+    {
+        std::string result = generateShift(level);
+        if (m_flags & STATIC) {
             result += "static ";
-        } else if( m_flags & VIRTUAL ) {
+        } else if (m_flags & VIRTUAL) {
             result += "virtual ";
         }
-        result += m_returnType + " ";
-        result += m_name + "()";
-        if( m_flags & CONST ) {
+        result += m_returnType + " " + m_name + "()";
+        if (m_flags & CONST) {
             result += " const";
         }
         result += " {\n";
-        for( const auto& b : m_body ) {
-            result += b->compile( level + 1 );
+        for (const auto& statement : m_body) {
+            result += statement->compile(level + 1);
         }
-        result += generateShift( level ) + "}\n";
+        result += generateShift(level) + "}\n";
         return result;
     }
 
@@ -114,45 +125,43 @@ private:
     std::string m_name;
     std::string m_returnType;
     Flags m_flags;
-    std::vector< std::shared_ptr< Unit > > m_body;
+    std::vector<std::shared_ptr<Unit>> m_body;
 };
 
-class PrintOperatorUnit : public Unit {
+class PrintOperatorUnit : public Unit
+{
 public:
-    explicit PrintOperatorUnit( const std::string& text ) : m_text( text ) {}
+    explicit PrintOperatorUnit(const std::string& text)
+        : m_text(text)
+    {
+    }
 
-    std::string compile( unsigned int level = 0 ) const {
-        return generateShift( level ) + "printf( \"" + m_text + "\" );\n";
+    std::string compile(unsigned int level = 0) const override
+    {
+        return generateShift(level) + "printf(\"" + m_text + "\");\n";
     }
 
 private:
     std::string m_text;
 };
 
-std::string generateProgram() {
-    ClassUnit myClass( "MyClass" );
+std::string generateProgram()
+{
+    ClassUnit myClass("MyClass");
 
-    myClass.add(
-        std::make_shared< MethodUnit >( "testFunc1", "void", 0 ),
-        ClassUnit::PUBLIC
-    );
-    myClass.add(
-        std::make_shared< MethodUnit >( "testFunc2", "void", MethodUnit::STATIC ),
-        ClassUnit::PRIVATE
-    );
-    myClass.add(
-        std::make_shared< MethodUnit >( "testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST ),
-        ClassUnit::PUBLIC
-    );
+    myClass.add(std::make_shared<MethodUnit>("testFunc1", "void", 0), ClassUnit::PUBLIC);
+    myClass.add(std::make_shared<MethodUnit>("testFunc2", "void", MethodUnit::STATIC), ClassUnit::PRIVATE);
+    myClass.add(std::make_shared<MethodUnit>("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
 
-    auto method = std::make_shared< MethodUnit >( "testFunc4", "void", MethodUnit::STATIC );
-    method->add( std::make_shared< PrintOperatorUnit >( R"(Hello, world!\n)" ) );
-    myClass.add( method, ClassUnit::PROTECTED );
+    auto method = std::make_shared<MethodUnit>("testFunc4", "void", MethodUnit::STATIC);
+    method->add(std::make_shared<PrintOperatorUnit>(R"(Hello, world!\n)"));
+    myClass.add(method, ClassUnit::PROTECTED);
 
     return myClass.compile();
 }
 
-int main() {
+int main()
+{
     std::cout << generateProgram() << std::endl;
     return 0;
 }
