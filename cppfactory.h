@@ -17,4 +17,18 @@ public:
     std::string compile(unsigned int level = 0) const override;
 };
 
+/**
+ * @brief Элемент "функция-член" на языке C++.
+ */
+class CppMethodUnit : public MethodUnit
+{
+public:
+    CppMethodUnit(const std::string& name, const std::string& returnType, Flags flags)
+        : MethodUnit(name, returnType, flags)
+    {
+    }
+
+    std::string compile(unsigned int level = 0) const override;
+};
+
 #endif

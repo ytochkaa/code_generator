@@ -42,3 +42,36 @@ std::string CppClassUnit::compile(unsigned int level) const
     result += generateShift(level) + "};\n";
     return result;
 }
+
+std::string CppMethodUnit::compile(unsigned int level) const
+{
+    std::string result = generateShift(level);
+    if (m_flags & STATIC) {
+        result += "static ";
+    } else if (m_flags & (VIRTUAL | ABSTRACT)) {
+        result += "virtual ";
+    }
+    result += m_returnType + " " + m_name + "()";
+    if (m_flags & CONST) {
+        result += " const";
+    }
+    if (m_flags & OVERRIDE) {
+        result += " override";
+    }
+    if (m_flags & SEALED) {
+        result += " final";
+    }
+    if ((m_flags & FINAL) && (m_flags & VIRTUAL)) {
+        result += " final";
+    }
+    if (m_flags & ABSTRACT) {
+        result += " = 0;\n";
+        return result;
+    }
+    result += " {\n";
+    for (const auto& statement : m_body) {
+        result += statement->compile(level + 1);
+    }
+    result += generateShift(level) + "}\n";
+    return result;
+}
