@@ -75,3 +75,33 @@ std::string CppMethodUnit::compile(unsigned int level) const
     result += generateShift(level) + "}\n";
     return result;
 }
+
+std::string CppPrintOperatorUnit::compile(unsigned int level) const
+{
+    return generateShift(level) + "printf(\"" + m_text + "\");\n";
+}
+
+std::shared_ptr<ClassUnit> CppFactory::createClass(const std::string& name, Unit::Flags flags) const
+{
+    return std::make_shared<CppClassUnit>(name, flags);
+}
+
+std::shared_ptr<MethodUnit> CppFactory::createMethod(const std::string& name, const std::string& returnType, Unit::Flags flags) const
+{
+    return std::make_shared<CppMethodUnit>(name, returnType, flags);
+}
+
+std::shared_ptr<PrintOperatorUnit> CppFactory::createPrintOperator(const std::string& text) const
+{
+    return std::make_shared<CppPrintOperatorUnit>(text);
+}
+
+std::string CppFactory::wrapProgram(const std::string& classCode) const
+{
+    return "#include <cstdio>\n\n" + classCode + "\nint main() {\n    return 0;\n}\n";
+}
+
+std::string CppFactory::fileName() const
+{
+    return "MyClass.cpp";
+}
