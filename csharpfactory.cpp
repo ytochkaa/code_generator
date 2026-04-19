@@ -61,3 +61,34 @@ std::string CSharpClassUnit::compile(unsigned int level) const
     result += generateShift(level) + "}\n";
     return result;
 }
+
+std::string CSharpMethodUnit::compile(unsigned int level) const
+{
+    std::string result = generateShift(level);
+    result += CSharpClassUnit::accessModifierToString(m_accessModifier) + " ";
+    if (m_flags & STATIC) {
+        result += "static ";
+    }
+    if (m_flags & ABSTRACT) {
+        result += "abstract ";
+    }
+    if (m_flags & VIRTUAL) {
+        result += "virtual ";
+    }
+    if (m_flags & OVERRIDE) {
+        result += "override ";
+    }
+    if (m_flags & SEALED) {
+        result += "sealed ";
+    }
+    if (m_flags & ASYNC) {
+        result += "async ";
+    }
+    result += m_returnType + " " + m_name + "()";
+    result += " {\n";
+    for (const auto& statement : m_body) {
+        result += statement->compile(level + 1);
+    }
+    result += generateShift(level) + "}\n";
+    return result;
+}
