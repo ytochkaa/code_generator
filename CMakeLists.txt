@@ -12,5 +12,7 @@ add_executable(${PROJECT_NAME}
     factory.h
     cppfactory.h
     cppfactory.cpp
+    csharpfactory.h
+    csharpfactory.cpp
     main.cpp
 )

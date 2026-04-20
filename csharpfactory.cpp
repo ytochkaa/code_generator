@@ -92,3 +92,33 @@ std::string CSharpMethodUnit::compile(unsigned int level) const
     result += generateShift(level) + "}\n";
     return result;
 }
+
+std::string CSharpPrintOperatorUnit::compile(unsigned int level) const
+{
+    return generateShift(level) + "Console.WriteLine(\"" + m_text + "\");\n";
+}
+
+std::shared_ptr<ClassUnit> CSharpFactory::createClass(const std::string& name, Unit::Flags flags) const
+{
+    return std::make_shared<CSharpClassUnit>(name, flags);
+}
+
+std::shared_ptr<MethodUnit> CSharpFactory::createMethod(const std::string& name, const std::string& returnType, Unit::Flags flags) const
+{
+    return std::make_shared<CSharpMethodUnit>(name, returnType, flags);
+}
+
+std::shared_ptr<PrintOperatorUnit> CSharpFactory::createPrintOperator(const std::string& text) const
+{
+    return std::make_shared<CSharpPrintOperatorUnit>(text);
+}
+
+std::string CSharpFactory::wrapProgram(const std::string& classCode) const
+{
+    return "using System;\n\n" + classCode + "\nclass Program {\n    static void Main() {\n    }\n}\n";
+}
+
+std::string CSharpFactory::fileName() const
+{
+    return "MyClass.cs";
+}
