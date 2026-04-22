@@ -1,7 +1,9 @@
 #include "cppfactory.h"
+#include "csharpfactory.h"
 
 #include <iostream>
 #include <memory>
+#include <vector>
 
 /**
  * @brief Строит дерево элементов класса и генерирует программу.
@@ -26,7 +28,14 @@ std::string generateProgram(const Factory& factory)
 
 int main()
 {
-    CppFactory factory;
-    std::cout << generateProgram(factory) << std::endl;
+    std::vector<std::shared_ptr<Factory>> factories = {
+        std::make_shared<CppFactory>(),
+        std::make_shared<CSharpFactory>()
+    };
+
+    for (const auto& factory : factories) {
+        std::cout << generateProgram(*factory) << "\n";
+    }
+
     return 0;
 }
