@@ -58,3 +58,34 @@ std::string JavaClassUnit::compile(unsigned int level) const
     result += generateShift(level) + "}\n";
     return result;
 }
+
+std::string JavaMethodUnit::compile(unsigned int level) const
+{
+    std::string result = generateShift(level);
+    std::string access = JavaClassUnit::accessModifierToString(m_accessModifier);
+    if (!access.empty()) {
+        result += access + " ";
+    }
+    if (m_flags & STATIC) {
+        result += "static ";
+    }
+    if (m_flags & ABSTRACT) {
+        result += "abstract ";
+    }
+    if (m_flags & VIRTUAL) {
+        result += "virtual ";
+    }
+    if (m_flags & FINAL) {
+        result += "final ";
+    }
+    result += m_returnType + " " + m_name + "()";
+    if (m_flags & CONST) {
+        result += " const";
+    }
+    result += " {\n";
+    for (const auto& statement : m_body) {
+        result += statement->compile(level + 1);
+    }
+    result += generateShift(level) + "}\n";
+    return result;
+}
