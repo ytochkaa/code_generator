@@ -89,3 +89,33 @@ std::string JavaMethodUnit::compile(unsigned int level) const
     result += generateShift(level) + "}\n";
     return result;
 }
+
+std::string JavaPrintOperatorUnit::compile(unsigned int level) const
+{
+    return generateShift(level) + "System.out.println(\"" + m_text + "\");\n";
+}
+
+std::shared_ptr<ClassUnit> JavaFactory::createClass(const std::string& name, Unit::Flags flags) const
+{
+    return std::make_shared<JavaClassUnit>(name, flags);
+}
+
+std::shared_ptr<MethodUnit> JavaFactory::createMethod(const std::string& name, const std::string& returnType, Unit::Flags flags) const
+{
+    return std::make_shared<JavaMethodUnit>(name, returnType, flags);
+}
+
+std::shared_ptr<PrintOperatorUnit> JavaFactory::createPrintOperator(const std::string& text) const
+{
+    return std::make_shared<JavaPrintOperatorUnit>(text);
+}
+
+std::string JavaFactory::wrapProgram(const std::string& classCode) const
+{
+    return classCode;
+}
+
+std::string JavaFactory::fileName() const
+{
+    return "MyClass.java";
+}

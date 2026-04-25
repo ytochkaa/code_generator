@@ -14,5 +14,7 @@ add_executable(${PROJECT_NAME}
     cppfactory.cpp
     csharpfactory.h
     csharpfactory.cpp
+    javafactory.h
+    javafactory.cpp
     main.cpp
 )
