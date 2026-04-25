@@ -1,5 +1,6 @@
 #include "cppfactory.h"
 #include "csharpfactory.h"
+#include "javafactory.h"
 
 #include <iostream>
 #include <memory>
@@ -30,7 +31,8 @@ int main()
 {
     std::vector<std::shared_ptr<Factory>> factories = {
         std::make_shared<CppFactory>(),
-        std::make_shared<CSharpFactory>()
+        std::make_shared<CSharpFactory>(),
+        std::make_shared<JavaFactory>()
     };
 
     for (const auto& factory : factories) {
