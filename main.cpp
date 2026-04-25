@@ -1,167 +1,43 @@
+#include "cppfactory.h"
+#include "csharpfactory.h"
+#include "javafactory.h"
+
 #include <iostream>
 #include <memory>
-#include <stdexcept>
-#include <string>
 #include <vector>
 
-class Unit
+/**
+ * @brief Строит дерево элементов класса и генерирует программу.
+ *
+ * Функция не знает целевого языка — он определяется переданной фабрикой.
+ * @param factory фабрика элементов нужного языка.
+ */
+std::string generateProgram(const Factory& factory)
 {
-public:
-    using Flags = unsigned int;
+    auto myClass = factory.createClass("MyClass");
 
-    virtual ~Unit() = default;
+    myClass->add(factory.createMethod("testFunc1", "void", 0), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("testFunc2", "void", MethodUnit::STATIC), ClassUnit::PRIVATE);
+    myClass->add(factory.createMethod("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
 
-    virtual void add(const std::shared_ptr<Unit>&, Flags)
-    {
-        throw std::runtime_error("Not supported");
-    }
+    auto testFunc4 = factory.createMethod("testFunc4", "void", MethodUnit::STATIC);
+    testFunc4->add(factory.createPrintOperator(R"(Hello, world!\n)"));
+    myClass->add(testFunc4, ClassUnit::PROTECTED);
 
-    virtual std::string compile(unsigned int level = 0) const = 0;
-
-protected:
-    virtual std::string generateShift(unsigned int level) const
-    {
-        std::string result;
-        for (unsigned int i = 0; i < level; ++i) {
-            result += "    ";
-        }
-        return result;
-    }
-};
-
-class ClassUnit : public Unit
-{
-public:
-    enum AccessModifier
-    {
-        PUBLIC,
-        PROTECTED,
-        PRIVATE
-    };
-    static const std::vector<std::string> ACCESS_MODIFIERS;
-
-    explicit ClassUnit(const std::string& name)
-        : m_name(name)
-    {
-        m_fields.resize(ACCESS_MODIFIERS.size());
-    }
-
-    void add(const std::shared_ptr<Unit>& unit, Flags flags) override
-    {
-        int accessModifier = PRIVATE;
-        if (flags < ACCESS_MODIFIERS.size()) {
-            accessModifier = flags;
-        }
-        m_fields[accessModifier].push_back(unit);
-    }
-
-    std::string compile(unsigned int level = 0) const override
-    {
-        std::string result = generateShift(level) + "class " + m_name + " {\n";
-        for (size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i) {
-            if (m_fields[i].empty()) {
-                continue;
-            }
-            result += ACCESS_MODIFIERS[i] + ":\n";
-            for (const auto& field : m_fields[i]) {
-                result += field->compile(level + 1);
-            }
-            result += "\n";
-        }
-        result += generateShift(level) + "};\n";
-        return result;
-    }
-
-private:
-    std::string m_name;
-    std::vector<std::vector<std::shared_ptr<Unit>>> m_fields;
-};
-
-const std::vector<std::string> ClassUnit::ACCESS_MODIFIERS = {"public", "protected", "private"};
-
-class MethodUnit : public Unit
-{
-public:
-    enum Modifier
-    {
-        STATIC = 1,
-        CONST = 1 << 1,
-        VIRTUAL = 1 << 2
-    };
-
-    MethodUnit(const std::string& name, const std::string& returnType, Flags flags)
-        : m_name(name)
-        , m_returnType(returnType)
-        , m_flags(flags)
-    {
-    }
-
-    void add(const std::shared_ptr<Unit>& unit, Flags = 0) override
-    {
-        m_body.push_back(unit);
-    }
-
-    std::string compile(unsigned int level = 0) const override
-    {
-        std::string result = generateShift(level);
-        if (m_flags & STATIC) {
-            result += "static ";
-        } else if (m_flags & VIRTUAL) {
-            result += "virtual ";
-        }
-        result += m_returnType + " " + m_name + "()";
-        if (m_flags & CONST) {
-            result += " const";
-        }
-        result += " {\n";
-        for (const auto& statement : m_body) {
-            result += statement->compile(level + 1);
-        }
-        result += generateShift(level) + "}\n";
-        return result;
-    }
-
-private:
-    std::string m_name;
-    std::string m_returnType;
-    Flags m_flags;
-    std::vector<std::shared_ptr<Unit>> m_body;
-};
-
-class PrintOperatorUnit : public Unit
-{
-public:
-    explicit PrintOperatorUnit(const std::string& text)
-        : m_text(text)
-    {
-    }
-
-    std::string compile(unsigned int level = 0) const override
-    {
-        return generateShift(level) + "printf(\"" + m_text + "\");\n";
-    }
-
-private:
-    std::string m_text;
-};
-
-std::string generateProgram()
-{
-    ClassUnit myClass("MyClass");
-
-    myClass.add(std::make_shared<MethodUnit>("testFunc1", "void", 0), ClassUnit::PUBLIC);
-    myClass.add(std::make_shared<MethodUnit>("testFunc2", "void", MethodUnit::STATIC), ClassUnit::PRIVATE);
-    myClass.add(std::make_shared<MethodUnit>("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
-
-    auto method = std::make_shared<MethodUnit>("testFunc4", "void", MethodUnit::STATIC);
-    method->add(std::make_shared<PrintOperatorUnit>(R"(Hello, world!\n)"));
-    myClass.add(method, ClassUnit::PROTECTED);
-
-    return myClass.compile();
+    return factory.wrapProgram(myClass->compile());
 }
 
 int main()
 {
-    std::cout << generateProgram() << std::endl;
+    std::vector<std::shared_ptr<Factory>> factories = {
+        std::make_shared<CppFactory>(),
+        std::make_shared<CSharpFactory>(),
+        std::make_shared<JavaFactory>()
+    };
+
+    for (const auto& factory : factories) {
+        std::cout << generateProgram(*factory) << "\n";
+    }
+
     return 0;
 }
