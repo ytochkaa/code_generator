@@ -14,17 +14,25 @@
  */
 std::string generateProgram(const Factory& factory)
 {
-    auto myClass = factory.createClass("MyClass");
+    auto baseClass = factory.createClass("BaseClass");
+    baseClass->add(factory.createMethod("draw", "void", MethodUnit::VIRTUAL), ClassUnit::PUBLIC);
 
+    auto myClass = factory.createClass("MyClass", ClassUnit::ABSTRACT);
+    myClass->setParent("BaseClass");
+
+    myClass->add(factory.createMethod("draw", "void", MethodUnit::SEALED), ClassUnit::PUBLIC);
     myClass->add(factory.createMethod("testFunc1", "void", 0), ClassUnit::PUBLIC);
-    myClass->add(factory.createMethod("testFunc2", "void", MethodUnit::STATIC), ClassUnit::PRIVATE);
+    myClass->add(factory.createMethod("testFunc2", "void", MethodUnit::STATIC | MethodUnit::FINAL), ClassUnit::PRIVATE);
     myClass->add(factory.createMethod("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
 
     auto testFunc4 = factory.createMethod("testFunc4", "void", MethodUnit::STATIC);
     testFunc4->add(factory.createPrintOperator(R"(Hello, world!\n)"));
     myClass->add(testFunc4, ClassUnit::PROTECTED);
 
-    return factory.wrapProgram(myClass->compile());
+    myClass->add(factory.createMethod("testFunc5", "void", MethodUnit::ABSTRACT), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("testFunc6", "void", 0), ClassUnit::INTERNAL);
+
+    return factory.wrapProgram(baseClass->compile() + "\n" + myClass->compile());
 }
 
 int main()
