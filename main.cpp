@@ -2,6 +2,8 @@
 #include "csharpfactory.h"
 #include "javafactory.h"
 
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -43,8 +45,14 @@ int main()
         std::make_shared<JavaFactory>()
     };
 
+    std::filesystem::create_directory("generated");
+
     for (const auto& factory : factories) {
-        std::cout << generateProgram(*factory) << "\n";
+        std::string program = generateProgram(*factory);
+        std::cout << program << "\n";
+
+        std::ofstream out("generated/" + factory->fileName());
+        out << program;
     }
 
     return 0;
