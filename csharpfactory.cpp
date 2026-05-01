@@ -85,6 +85,10 @@ std::string CSharpMethodUnit::compile(unsigned int level) const
         result += "async ";
     }
     result += m_returnType + " " + m_name + "()";
+    if (m_flags & ABSTRACT) {
+        result += ";\n";
+        return result;
+    }
     result += " {\n";
     for (const auto& statement : m_body) {
         result += statement->compile(level + 1);
