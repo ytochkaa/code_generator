@@ -22,7 +22,7 @@ std::string generateProgram(const Factory& factory)
     auto myClass = factory.createClass("MyClass", ClassUnit::ABSTRACT);
     myClass->setParent("BaseClass");
 
-    myClass->add(factory.createMethod("draw", "void", MethodUnit::SEALED), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("draw", "void", MethodUnit::OVERRIDE | MethodUnit::SEALED), ClassUnit::PUBLIC);
     myClass->add(factory.createMethod("testFunc1", "void", 0), ClassUnit::PUBLIC);
     myClass->add(factory.createMethod("testFunc2", "void", MethodUnit::STATIC | MethodUnit::FINAL), ClassUnit::PRIVATE);
     myClass->add(factory.createMethod("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
