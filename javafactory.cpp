@@ -72,16 +72,10 @@ std::string JavaMethodUnit::compile(unsigned int level) const
     if (m_flags & ABSTRACT) {
         result += "abstract ";
     }
-    if (m_flags & VIRTUAL) {
-        result += "virtual ";
-    }
     if (m_flags & FINAL) {
         result += "final ";
     }
     result += m_returnType + " " + m_name + "()";
-    if (m_flags & CONST) {
-        result += " const";
-    }
     if (m_flags & ABSTRACT) {
         result += ";\n";
         return result;
