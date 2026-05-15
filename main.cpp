@@ -1,158 +1,59 @@
+#include "cppfactory.h"
+#include "csharpfactory.h"
+#include "javafactory.h"
+
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
-#include <stdexcept>
-#include <string>
 #include <vector>
 
-class Unit {
-public:
-    using Flags = unsigned int;
+/**
+ * @brief Строит дерево элементов класса и генерирует программу.
+ *
+ * Функция не знает целевого языка — он определяется переданной фабрикой.
+ * @param factory фабрика элементов нужного языка.
+ */
+std::string generateProgram(const Factory& factory)
+{
+    auto baseClass = factory.createClass("BaseClass");
+    baseClass->add(factory.createMethod("draw", "void", MethodUnit::VIRTUAL), ClassUnit::PUBLIC);
 
-public:
-    virtual ~Unit() = default;
+    auto myClass = factory.createClass("MyClass", ClassUnit::ABSTRACT);
+    myClass->setParent("BaseClass");
 
-    virtual void add( const std::shared_ptr< Unit >&, Flags ) {
-        throw std::runtime_error( "Not supported" );
-    }
+    myClass->add(factory.createMethod("draw", "void", MethodUnit::OVERRIDE | MethodUnit::SEALED), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("testFunc1", "void", 0), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("testFunc2", "void", MethodUnit::STATIC | MethodUnit::FINAL), ClassUnit::PRIVATE);
+    myClass->add(factory.createMethod("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
 
-    virtual std::string compile( unsigned int level = 0 ) const = 0;
+    auto testFunc4 = factory.createMethod("testFunc4", "void", MethodUnit::STATIC);
+    testFunc4->add(factory.createPrintOperator(R"(Hello, world!\n)"));
+    myClass->add(testFunc4, ClassUnit::PROTECTED);
 
-protected:
-    virtual std::string generateShift( unsigned int level ) const {
-        static const auto DEFAULT_SHIFT = "    ";
-        std::string result;
-        for( unsigned int i = 0; i < level; ++i ) {
-            result += DEFAULT_SHIFT;
-        }
-        return result;
-    }
-};
+    myClass->add(factory.createMethod("testFunc5", "void", MethodUnit::ABSTRACT), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("testFunc6", "void", 0), ClassUnit::INTERNAL);
 
-class ClassUnit : public Unit {
-public:
-    enum AccessModifier {
-        PUBLIC,
-        PROTECTED,
-        PRIVATE
-    };
-    static const std::vector< std::string > ACCESS_MODIFIERS;
-
-public:
-    explicit ClassUnit( const std::string& name ) : m_name( name ) {
-        m_fields.resize( ACCESS_MODIFIERS.size() );
-    }
-
-    void add( const std::shared_ptr< Unit >& unit, Flags flags ) {
-        int accessModifier = PRIVATE;
-        if( flags < ACCESS_MODIFIERS.size() ) {
-            accessModifier = flags;
-        }
-        m_fields[ accessModifier ].push_back( unit );
-    }
-
-    std::string compile( unsigned int level = 0 ) const {
-        std::string result = generateShift( level ) + "class " + m_name + " {\n";
-        for( size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i ) {
-            if( m_fields[ i ].empty() ) {
-                continue;
-            }
-            result += ACCESS_MODIFIERS[ i ] + ":\n";
-            for( const auto& f : m_fields[ i ] ) {
-                result += f->compile( level + 1 );
-            }
-            result += "\n";
-        }
-        result += generateShift( level ) + "};\n";
-        return result;
-    }
-
-private:
-    std::string m_name;
-    using Fields = std::vector< std::shared_ptr< Unit > >;
-    std::vector< Fields > m_fields;
-};
-
-const std::vector< std::string > ClassUnit::ACCESS_MODIFIERS = { "public", "protected", "private" };
-
-class MethodUnit : public Unit {
-public:
-    enum Modifier {
-        STATIC  = 1,
-        CONST   = 1 << 1,
-        VIRTUAL = 1 << 2
-    };
-
-public:
-    MethodUnit( const std::string& name, const std::string& returnType, Flags flags ) :
-        m_name( name ), m_returnType( returnType ), m_flags( flags ) {}
-
-    void add( const std::shared_ptr< Unit >& unit, Flags /* flags */ = 0 ) {
-        m_body.push_back( unit );
-    }
-
-    std::string compile( unsigned int level = 0 ) const {
-        std::string result = generateShift( level );
-        if( m_flags & STATIC ) {
-            result += "static ";
-        } else if( m_flags & VIRTUAL ) {
-            result += "virtual ";
-        }
-        result += m_returnType + " ";
-        result += m_name + "()";
-        if( m_flags & CONST ) {
-            result += " const";
-        }
-        result += " {\n";
-        for( const auto& b : m_body ) {
-            result += b->compile( level + 1 );
-        }
-        result += generateShift( level ) + "}\n";
-        return result;
-    }
-
-private:
-    std::string m_name;
-    std::string m_returnType;
-    Flags m_flags;
-    std::vector< std::shared_ptr< Unit > > m_body;
-};
-
-class PrintOperatorUnit : public Unit {
-public:
-    explicit PrintOperatorUnit( const std::string& text ) : m_text( text ) {}
-
-    std::string compile( unsigned int level = 0 ) const {
-        return generateShift( level ) + "printf( \"" + m_text + "\" );\n";
-    }
-
-private:
-    std::string m_text;
-};
-
-std::string generateProgram() {
-    ClassUnit myClass( "MyClass" );
-
-    myClass.add(
-        std::make_shared< MethodUnit >( "testFunc1", "void", 0 ),
-        ClassUnit::PUBLIC
-    );
-    myClass.add(
-        std::make_shared< MethodUnit >( "testFunc2", "void", MethodUnit::STATIC ),
-        ClassUnit::PRIVATE
-    );
-    myClass.add(
-        std::make_shared< MethodUnit >( "testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST ),
-        ClassUnit::PUBLIC
-    );
-
-    auto method = std::make_shared< MethodUnit >( "testFunc4", "void", MethodUnit::STATIC );
-    method->add( std::make_shared< PrintOperatorUnit >( R"(Hello, world!\n)" ) );
-    myClass.add( method, ClassUnit::PROTECTED );
-
-    return myClass.compile();
+    return factory.wrapProgram(baseClass->compile() + "\n" + myClass->compile());
 }
 
-int main() {
-    std::cout << generateProgram() << std::endl;
+int main()
+{
+    std::vector<std::shared_ptr<Factory>> factories = {
+        std::make_shared<CppFactory>(),
+        std::make_shared<CSharpFactory>(),
+        std::make_shared<JavaFactory>()
+    };
+
+    std::filesystem::create_directory("generated");
+
+    for (const auto& factory : factories) {
+        std::string program = generateProgram(*factory);
+        std::cout << program << "\n";
+
+        std::ofstream out("generated/" + factory->fileName());
+        out << program;
+    }
+
     return 0;
 }
