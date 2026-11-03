@@ -19,3 +19,8 @@ set(GENERATOR_SOURCES
 )
 
 add_executable(${PROJECT_NAME} ${GENERATOR_SOURCES} main.cpp)
+
+add_executable(validation_tests ${GENERATOR_SOURCES} tests/validation_tests.cpp)
+
+enable_testing()
+add_test(NAME validation_tests COMMAND validation_tests)
