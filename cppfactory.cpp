@@ -4,6 +4,8 @@
 
 std::string CppClassUnit::compile(unsigned int level) const
 {
+    checkCommonFlags("C++");
+
     std::string result = generateShift(level) + "class " + m_name;
     if (m_flags & FINAL) {
         result += " final";
@@ -13,6 +15,8 @@ std::string CppClassUnit::compile(unsigned int level) const
     }
     result += " {\n";
 
+    // В C++ нет internal и package-private, поэтому такие члены попадают
+    // в ближайшую по смыслу секцию.
     static const std::vector<std::pair<int, std::string>> sections = {
         {PUBLIC, "public"},
         {INTERNAL, "public"},
@@ -30,12 +34,17 @@ std::string CppClassUnit::compile(unsigned int level) const
             continue;
         }
         if (section.second != lastLabel) {
-            result += section.second + ":\n";
+            if (!lastLabel.empty()) {
+                result += "\n";
+            }
+            result += generateShift(level) + section.second + ":\n";
             lastLabel = section.second;
         }
         for (const auto& field : it->second) {
             result += field->compile(level + 1);
         }
+    }
+    if (!lastLabel.empty()) {
         result += "\n";
     }
 
@@ -45,6 +54,11 @@ std::string CppClassUnit::compile(unsigned int level) const
 
 std::string CppMethodUnit::compile(unsigned int level) const
 {
+    checkCommonFlags("C++");
+    if ((m_flags & STATIC) && (m_flags & CONST)) {
+        fail("C++", "статический метод не может быть const");
+    }
+
     std::string result = generateShift(level);
     if (m_flags & STATIC) {
         result += "static ";
@@ -58,22 +72,14 @@ std::string CppMethodUnit::compile(unsigned int level) const
     if (m_flags & OVERRIDE) {
         result += " override";
     }
-    if (m_flags & SEALED) {
-        result += " final";
-    }
-    if ((m_flags & FINAL) && (m_flags & VIRTUAL)) {
+    // final в C++ допустим только у виртуальных методов.
+    if ((m_flags & SEALED) || ((m_flags & FINAL) && (m_flags & VIRTUAL))) {
         result += " final";
     }
     if (m_flags & ABSTRACT) {
-        result += " = 0;\n";
-        return result;
+        return result + " = 0;\n";
     }
-    result += " {\n";
-    for (const auto& statement : m_body) {
-        result += statement->compile(level + 1);
-    }
-    result += generateShift(level) + "}\n";
-    return result;
+    return result + compileBody(level);
 }
 
 std::string CppPrintOperatorUnit::compile(unsigned int level) const

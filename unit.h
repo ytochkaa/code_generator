@@ -16,6 +16,11 @@ class Unit
 public:
     using Flags = unsigned int;
 
+    /**
+     * @brief Значение модификатора доступа "не задан".
+     */
+    static constexpr int NO_ACCESS = -1;
+
     virtual ~Unit() = default;
 
     /**
@@ -31,9 +36,17 @@ public:
     /**
      * @brief Генерирует исходный код элемента.
      * @param level уровень вложенности для расстановки отступов.
+     * @throw std::logic_error если сочетание модификаторов недопустимо
+     *        для целевого языка.
      */
     virtual std::string compile(unsigned int level = 0) const = 0;
 
+    /**
+     * @brief Задаёт модификатор доступа элемента.
+     *
+     * Для членов класса вызывается из ClassUnit::add, для класса верхнего
+     * уровня — вручную.
+     */
     void setAccessModifier(int accessModifier) { m_accessModifier = accessModifier; }
     int accessModifier() const { return m_accessModifier; }
 
@@ -41,16 +54,17 @@ protected:
     /**
      * @brief Возвращает отступ, соответствующий уровню вложенности.
      */
-    std::string generateShift(unsigned int level) const
+    virtual std::string generateShift(unsigned int level) const
     {
+        static const auto DEFAULT_SHIFT = "    ";
         std::string result;
         for (unsigned int i = 0; i < level; ++i) {
-            result += "    ";
+            result += DEFAULT_SHIFT;
         }
         return result;
     }
 
-    int m_accessModifier = 0;
+    int m_accessModifier = NO_ACCESS;
 };
 
 #endif

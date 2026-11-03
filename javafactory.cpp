@@ -2,6 +2,12 @@
 
 #include <vector>
 
+namespace {
+
+const char* const LANGUAGE = "Java";
+
+} // namespace
+
 std::string JavaClassUnit::accessModifierToString(int accessModifier)
 {
     switch (accessModifier) {
@@ -24,9 +30,37 @@ std::string JavaClassUnit::accessModifierToString(int accessModifier)
     }
 }
 
+void JavaClassUnit::check(unsigned int level) const
+{
+    checkCommonFlags(LANGUAGE);
+
+    if (level == 0) {
+        // Класс верхнего уровня может быть только public или package-private.
+        if (m_accessModifier == PROTECTED || m_accessModifier == PROTECTED_INTERNAL
+            || m_accessModifier == PRIVATE || m_accessModifier == PRIVATE_PROTECTED) {
+            fail(LANGUAGE, "класс верхнего уровня может быть только public или package-private");
+        }
+        if (m_flags & STATIC) {
+            fail(LANGUAGE, "static допустим только у вложенного класса");
+        }
+    }
+
+    for (const auto& method : methods()) {
+        if ((method->flags() & MethodUnit::ABSTRACT) && !(m_flags & ABSTRACT)) {
+            fail(LANGUAGE, "абстрактный метод " + method->name() + " допустим только в abstract-классе");
+        }
+    }
+}
+
 std::string JavaClassUnit::compile(unsigned int level) const
 {
+    check(level);
+
     std::string result = generateShift(level);
+    std::string access = accessModifierToString(m_accessModifier);
+    if (!access.empty()) {
+        result += access + " ";
+    }
     if (m_flags & ABSTRACT) {
         result += "abstract ";
     }
@@ -47,7 +81,7 @@ std::string JavaClassUnit::compile(unsigned int level) const
     };
     for (int accessModifier : order) {
         auto it = m_fields.find(accessModifier);
-        if (it == m_fields.end() || it->second.empty()) {
+        if (it == m_fields.end()) {
             continue;
         }
         for (const auto& field : it->second) {
@@ -59,9 +93,23 @@ std::string JavaClassUnit::compile(unsigned int level) const
     return result;
 }
 
+void JavaMethodUnit::check() const
+{
+    checkCommonFlags(LANGUAGE);
+    if ((m_flags & (ABSTRACT | OVERRIDE)) && m_accessModifier == ClassUnit::PRIVATE) {
+        fail(LANGUAGE, "abstract и override-методы не могут быть private");
+    }
+}
+
 std::string JavaMethodUnit::compile(unsigned int level) const
 {
-    std::string result = generateShift(level);
+    check();
+
+    std::string result;
+    if (m_flags & OVERRIDE) {
+        result += generateShift(level) + "@Override\n";
+    }
+    result += generateShift(level);
     std::string access = JavaClassUnit::accessModifierToString(m_accessModifier);
     if (!access.empty()) {
         result += access + " ";
@@ -72,25 +120,20 @@ std::string JavaMethodUnit::compile(unsigned int level) const
     if (m_flags & ABSTRACT) {
         result += "abstract ";
     }
-    if (m_flags & FINAL) {
+    // Аналог sealed-метода C# в Java — final-метод.
+    if (m_flags & (FINAL | SEALED)) {
         result += "final ";
     }
     result += m_returnType + " " + m_name + "()";
     if (m_flags & ABSTRACT) {
-        result += ";\n";
-        return result;
+        return result + ";\n";
     }
-    result += " {\n";
-    for (const auto& statement : m_body) {
-        result += statement->compile(level + 1);
-    }
-    result += generateShift(level) + "}\n";
-    return result;
+    return result + compileBody(level);
 }
 
 std::string JavaPrintOperatorUnit::compile(unsigned int level) const
 {
-    return generateShift(level) + "System.out.println(\"" + m_text + "\");\n";
+    return generateShift(level) + "System.out.print(\"" + m_text + "\");\n";
 }
 
 std::shared_ptr<ClassUnit> JavaFactory::createClass(const std::string& name, Unit::Flags flags) const
@@ -110,7 +153,7 @@ std::shared_ptr<PrintOperatorUnit> JavaFactory::createPrintOperator(const std::s
 
 std::string JavaFactory::wrapProgram(const std::string& classCode) const
 {
-    return classCode;
+    return classCode + "\nclass Program {\n    public static void main(String[] args) {\n    }\n}\n";
 }
 
 std::string JavaFactory::fileName() const

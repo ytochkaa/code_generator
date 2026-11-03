@@ -6,23 +6,22 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 /**
- * @brief Строит дерево элементов класса и генерирует программу.
+ * @brief Строит дерево элементов классов и генерирует программу.
  *
  * Функция не знает целевого языка — он определяется переданной фабрикой.
  * @param factory фабрика элементов нужного языка.
+ * @throw std::logic_error если модификаторы недопустимы для целевого языка.
  */
 std::string generateProgram(const Factory& factory)
 {
-    auto baseClass = factory.createClass("BaseClass");
-    baseClass->add(factory.createMethod("draw", "void", MethodUnit::VIRTUAL), ClassUnit::PUBLIC);
-
     auto myClass = factory.createClass("MyClass", ClassUnit::ABSTRACT);
-    myClass->setParent("BaseClass");
+    myClass->setAccessModifier(ClassUnit::PUBLIC);
 
-    myClass->add(factory.createMethod("draw", "void", MethodUnit::OVERRIDE | MethodUnit::SEALED), ClassUnit::PUBLIC);
+    myClass->add(factory.createMethod("draw", "void", MethodUnit::VIRTUAL), ClassUnit::PUBLIC);
     myClass->add(factory.createMethod("testFunc1", "void", 0), ClassUnit::PUBLIC);
     myClass->add(factory.createMethod("testFunc2", "void", MethodUnit::STATIC | MethodUnit::FINAL), ClassUnit::PRIVATE);
     myClass->add(factory.createMethod("testFunc3", "void", MethodUnit::VIRTUAL | MethodUnit::CONST), ClassUnit::PUBLIC);
@@ -34,7 +33,14 @@ std::string generateProgram(const Factory& factory)
     myClass->add(factory.createMethod("testFunc5", "void", MethodUnit::ABSTRACT), ClassUnit::PUBLIC);
     myClass->add(factory.createMethod("testFunc6", "void", 0), ClassUnit::INTERNAL);
 
-    return factory.wrapProgram(baseClass->compile() + "\n" + myClass->compile());
+    auto childClass = factory.createClass("ChildClass", ClassUnit::FINAL);
+    childClass->setAccessModifier(ClassUnit::INTERNAL);
+    childClass->setParent("MyClass");
+
+    childClass->add(factory.createMethod("draw", "void", MethodUnit::OVERRIDE | MethodUnit::SEALED), ClassUnit::PUBLIC);
+    childClass->add(factory.createMethod("testFunc5", "void", MethodUnit::OVERRIDE), ClassUnit::PUBLIC);
+
+    return factory.wrapProgram(myClass->compile() + "\n" + childClass->compile());
 }
 
 int main()
@@ -47,13 +53,19 @@ int main()
 
     std::filesystem::create_directory("generated");
 
+    int result = 0;
     for (const auto& factory : factories) {
-        std::string program = generateProgram(*factory);
-        std::cout << program << "\n";
+        try {
+            std::string program = generateProgram(*factory);
+            std::cout << program << "\n";
 
-        std::ofstream out("generated/" + factory->fileName());
-        out << program;
+            std::ofstream out("generated/" + factory->fileName());
+            out << program;
+        } catch (const std::logic_error& error) {
+            std::cerr << "Ошибка генерации " << factory->fileName() << ": " << error.what() << "\n";
+            result = 1;
+        }
     }
 
-    return 0;
+    return result;
 }

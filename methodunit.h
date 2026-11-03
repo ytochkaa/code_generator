@@ -3,6 +3,7 @@
 
 #include "unit.h"
 
+#include <stdexcept>
 #include <vector>
 
 /**
@@ -44,7 +45,49 @@ public:
         m_body.push_back(unit);
     }
 
+    const std::string& name() const { return m_name; }
+    Flags flags() const { return m_flags; }
+
 protected:
+    /**
+     * @brief Проверяет сочетания модификаторов, недопустимые во всех языках.
+     * @param language название языка для текста ошибки.
+     * @throw std::logic_error при недопустимом сочетании.
+     */
+    void checkCommonFlags(const std::string& language) const
+    {
+        if ((m_flags & STATIC) && (m_flags & (VIRTUAL | ABSTRACT | OVERRIDE | SEALED))) {
+            fail(language, "static нельзя сочетать с virtual, abstract, override или sealed");
+        }
+        if ((m_flags & ABSTRACT) && (m_flags & (SEALED | FINAL))) {
+            fail(language, "abstract нельзя сочетать с sealed или final");
+        }
+        if ((m_flags & SEALED) && !(m_flags & OVERRIDE)) {
+            fail(language, "sealed допустим только вместе с override");
+        }
+    }
+
+    /**
+     * @brief Выбрасывает исключение с описанием ошибки в методе.
+     */
+    [[noreturn]] void fail(const std::string& language, const std::string& message) const
+    {
+        throw std::logic_error(language + ": метод " + m_name + ": " + message);
+    }
+
+    /**
+     * @brief Генерирует тело метода в фигурных скобках.
+     */
+    std::string compileBody(unsigned int level) const
+    {
+        std::string result = " {\n";
+        for (const auto& statement : m_body) {
+            result += statement->compile(level + 1);
+        }
+        result += generateShift(level) + "}\n";
+        return result;
+    }
+
     std::string m_name;
     std::string m_returnType;
     Flags m_flags;

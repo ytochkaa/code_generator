@@ -16,10 +16,19 @@ public:
 
     /**
      * @brief Возвращает ключевое слово доступа C# для модификатора.
+     *
+     * Если модификатор не задан, возвращает пустую строку.
      */
     static std::string accessModifierToString(int accessModifier);
 
     std::string compile(unsigned int level = 0) const override;
+
+private:
+    /**
+     * @brief Проверяет модификаторы класса и его методов по правилам C#.
+     * @throw std::logic_error при недопустимом сочетании.
+     */
+    void check(unsigned int level) const;
 };
 
 /**
@@ -34,6 +43,13 @@ public:
     }
 
     std::string compile(unsigned int level = 0) const override;
+
+private:
+    /**
+     * @brief Проверяет модификаторы метода по правилам C#.
+     * @throw std::logic_error при недопустимом сочетании.
+     */
+    void check() const;
 };
 
 /**

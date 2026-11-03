@@ -1,9 +1,11 @@
 #ifndef CLASSUNIT_H
 #define CLASSUNIT_H
 
+#include "methodunit.h"
 #include "unit.h"
 
 #include <map>
+#include <stdexcept>
 #include <vector>
 
 /**
@@ -67,6 +69,47 @@ public:
     }
 
 protected:
+    /**
+     * @brief Проверяет сочетания модификаторов класса, недопустимые во всех языках.
+     * @param language название языка для текста ошибки.
+     * @throw std::logic_error при недопустимом сочетании.
+     */
+    void checkCommonFlags(const std::string& language) const
+    {
+        if ((m_flags & ABSTRACT) && (m_flags & FINAL)) {
+            fail(language, "abstract нельзя сочетать с final (sealed)");
+        }
+        for (const auto& method : methods()) {
+            if ((method->flags() & MethodUnit::OVERRIDE) && m_parent.empty()) {
+                fail(language, "метод " + method->name() + " помечен override, но у класса нет базового класса");
+            }
+        }
+    }
+
+    /**
+     * @brief Возвращает все методы класса (без вложенных классов и прочих элементов).
+     */
+    std::vector<std::shared_ptr<MethodUnit>> methods() const
+    {
+        std::vector<std::shared_ptr<MethodUnit>> result;
+        for (const auto& section : m_fields) {
+            for (const auto& unit : section.second) {
+                if (auto method = std::dynamic_pointer_cast<MethodUnit>(unit)) {
+                    result.push_back(method);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @brief Выбрасывает исключение с описанием ошибки в классе.
+     */
+    [[noreturn]] void fail(const std::string& language, const std::string& message) const
+    {
+        throw std::logic_error(language + ": класс " + m_name + ": " + message);
+    }
+
     std::string m_name;
     Flags m_flags;
     std::string m_parent;

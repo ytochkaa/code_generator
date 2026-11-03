@@ -1,12 +1,7 @@
 using System;
 
-class BaseClass {
+public abstract class MyClass {
     public virtual void draw() {
-    }
-}
-
-abstract class MyClass : BaseClass {
-    public override sealed void draw() {
     }
     public void testFunc1() {
     }
@@ -16,9 +11,16 @@ abstract class MyClass : BaseClass {
     internal void testFunc6() {
     }
     protected static void testFunc4() {
-        Console.WriteLine("Hello, world!\n");
+        Console.Write("Hello, world!\n");
     }
     private static void testFunc2() {
+    }
+}
+
+internal sealed class ChildClass : MyClass {
+    public override sealed void draw() {
+    }
+    public override void testFunc5() {
     }
 }
 

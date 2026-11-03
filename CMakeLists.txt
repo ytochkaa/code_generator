@@ -4,7 +4,7 @@ project(code_generator LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(${PROJECT_NAME}
+set(GENERATOR_SOURCES
     unit.h
     classunit.h
     methodunit.h
@@ -16,5 +16,6 @@ add_executable(${PROJECT_NAME}
     csharpfactory.cpp
     javafactory.h
     javafactory.cpp
-    main.cpp
 )
+
+add_executable(${PROJECT_NAME} ${GENERATOR_SOURCES} main.cpp)

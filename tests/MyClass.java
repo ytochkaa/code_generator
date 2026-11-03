@@ -1,9 +1,4 @@
-class BaseClass {
-    public void draw() {
-    }
-}
-
-abstract class MyClass extends BaseClass {
+public abstract class MyClass {
     public void draw() {
     }
     public void testFunc1() {
@@ -12,10 +7,24 @@ abstract class MyClass extends BaseClass {
     }
     public abstract void testFunc5();
     protected static void testFunc4() {
-        System.out.println("Hello, world!\n");
+        System.out.print("Hello, world!\n");
     }
     private static final void testFunc2() {
     }
     void testFunc6() {
+    }
+}
+
+final class ChildClass extends MyClass {
+    @Override
+    public final void draw() {
+    }
+    @Override
+    public void testFunc5() {
+    }
+}
+
+class Program {
+    public static void main(String[] args) {
     }
 }
