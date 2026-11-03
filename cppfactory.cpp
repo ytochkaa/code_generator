@@ -4,33 +4,26 @@
 
 std::string CppClassUnit::compile(unsigned int level) const
 {
-    checkCommonFlags("C++");
-
     std::string result = generateShift(level) + "class " + m_name;
     if (m_flags & FINAL) {
         result += " final";
     }
-    if (!m_parent.empty()) {
-        result += " : public " + m_parent;
-    }
     result += " {\n";
 
-    // В C++ нет internal и package-private, поэтому такие члены попадают
-    // в ближайшую по смыслу секцию.
+    // В C++ нет internal, поэтому такие члены попадают в ближайшую по смыслу секцию.
     static const std::vector<std::pair<int, std::string>> sections = {
         {PUBLIC, "public"},
         {INTERNAL, "public"},
         {PROTECTED, "protected"},
         {PROTECTED_INTERNAL, "protected"},
         {PRIVATE_PROTECTED, "protected"},
-        {PRIVATE, "private"},
-        {PACKAGE_PRIVATE, "private"}
+        {PRIVATE, "private"}
     };
 
     std::string lastLabel;
     for (const auto& section : sections) {
         auto it = m_fields.find(section.first);
-        if (it == m_fields.end() || it->second.empty()) {
+        if (it == m_fields.end()) {
             continue;
         }
         if (section.second != lastLabel) {
@@ -44,9 +37,6 @@ std::string CppClassUnit::compile(unsigned int level) const
             result += field->compile(level + 1);
         }
     }
-    if (!lastLabel.empty()) {
-        result += "\n";
-    }
 
     result += generateShift(level) + "};\n";
     return result;
@@ -54,11 +44,6 @@ std::string CppClassUnit::compile(unsigned int level) const
 
 std::string CppMethodUnit::compile(unsigned int level) const
 {
-    checkCommonFlags("C++");
-    if ((m_flags & STATIC) && (m_flags & CONST)) {
-        fail("C++", "статический метод не может быть const");
-    }
-
     std::string result = generateShift(level);
     if (m_flags & STATIC) {
         result += "static ";
@@ -69,11 +54,8 @@ std::string CppMethodUnit::compile(unsigned int level) const
     if (m_flags & CONST) {
         result += " const";
     }
-    if (m_flags & OVERRIDE) {
-        result += " override";
-    }
     // final в C++ допустим только у виртуальных методов.
-    if ((m_flags & SEALED) || ((m_flags & FINAL) && (m_flags & VIRTUAL))) {
+    if ((m_flags & FINAL) && (m_flags & VIRTUAL)) {
         result += " final";
     }
     if (m_flags & ABSTRACT) {

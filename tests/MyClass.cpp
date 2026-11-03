@@ -2,8 +2,6 @@
 
 class MyClass {
 public:
-    virtual void draw() {
-    }
     void testFunc1() {
     }
     virtual void testFunc3() const {
@@ -16,20 +14,14 @@ protected:
     static void testFunc4() {
         printf("Hello, world!\n");
     }
+    void testFunc7() {
+    }
+    void testFunc8() {
+    }
 
 private:
     static void testFunc2() {
     }
-
-};
-
-class ChildClass final : public MyClass {
-public:
-    void draw() override final {
-    }
-    void testFunc5() override {
-    }
-
 };
 
 int main() {

@@ -16,11 +16,6 @@ class Unit
 public:
     using Flags = unsigned int;
 
-    /**
-     * @brief Значение модификатора доступа "не задан".
-     */
-    static constexpr int NO_ACCESS = -1;
-
     virtual ~Unit() = default;
 
     /**
@@ -36,19 +31,15 @@ public:
     /**
      * @brief Генерирует исходный код элемента.
      * @param level уровень вложенности для расстановки отступов.
-     * @throw std::logic_error если сочетание модификаторов недопустимо
-     *        для целевого языка.
      */
     virtual std::string compile(unsigned int level = 0) const = 0;
 
     /**
      * @brief Задаёт модификатор доступа элемента.
      *
-     * Для членов класса вызывается из ClassUnit::add, для класса верхнего
-     * уровня — вручную.
+     * Для членов класса вызывается из ClassUnit::add, для класса — вручную.
      */
     void setAccessModifier(int accessModifier) { m_accessModifier = accessModifier; }
-    int accessModifier() const { return m_accessModifier; }
 
 protected:
     /**
@@ -64,7 +55,7 @@ protected:
         return result;
     }
 
-    int m_accessModifier = NO_ACCESS;
+    int m_accessModifier = 0;
 };
 
 #endif

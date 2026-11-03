@@ -1,12 +1,10 @@
 classDiagram
     class Unit {
         <<abstract>>
-        +NO_ACCESS : int
         #m_accessModifier : int
         +add(unit : Unit, flags : Flags) void
         +compile(level : unsigned int) string*
         +setAccessModifier(accessModifier : int) void
-        +accessModifier() int
         #generateShift(level : unsigned int) string
     }
 
@@ -14,13 +12,9 @@ classDiagram
         <<abstract>>
         #m_name : string
         #m_flags : Flags
-        #m_parent : string
         #m_fields : map~int, Fields~
         +ClassUnit(name : string, flags : Flags)
-        +setParent(parent : string) void
         +add(unit : Unit, flags : Flags) void
-        #checkCommonFlags(language : string) void
-        #methods() vector~MethodUnit~
     }
 
     class MethodUnit {
@@ -31,9 +25,6 @@ classDiagram
         #m_body : vector~Unit~
         +MethodUnit(name : string, returnType : string, flags : Flags)
         +add(unit : Unit, flags : Flags) void
-        +name() string
-        +flags() Flags
-        #checkCommonFlags(language : string) void
         #compileBody(level : unsigned int) string
     }
 
@@ -62,12 +53,10 @@ classDiagram
     class CSharpClassUnit {
         +accessModifierToString(accessModifier : int) string$
         +compile(level : unsigned int) string
-        -check(level : unsigned int) void
     }
     class JavaClassUnit {
         +accessModifierToString(accessModifier : int) string$
         +compile(level : unsigned int) string
-        -check(level : unsigned int) void
     }
 
     class CppMethodUnit {
@@ -75,11 +64,9 @@ classDiagram
     }
     class CSharpMethodUnit {
         +compile(level : unsigned int) string
-        -check() void
     }
     class JavaMethodUnit {
         +compile(level : unsigned int) string
-        -check() void
     }
 
     class CppPrintOperatorUnit {

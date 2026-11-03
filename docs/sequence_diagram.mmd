@@ -24,11 +24,9 @@ sequenceDiagram
 
     G->>C: compile()
     activate C
-    C->>C: check(level): правила C# для класса
     loop для каждого метода в порядке секций доступа
         C->>Me: compile(level + 1)
         activate Me
-        Me->>Me: check(): правила C# для метода
         loop для каждого оператора тела
             Me->>P: compile(level + 1)
             P-->>Me: Console.Write("...")
@@ -40,12 +38,8 @@ sequenceDiagram
     deactivate C
 
     G->>F: wrapProgram(classCode)
-    F-->>G: using System, классы и class Program
+    F-->>G: using System, класс и class Program
     G-->>M: текст программы
     deactivate G
 
-    alt модификаторы допустимы
-        M->>M: вывод в консоль и запись generated/MyClass.cs
-    else compile выбросил std::logic_error
-        M->>M: вывод «Ошибка генерации MyClass.cs: ...», файл не создаётся
-    end
+    M->>M: вывод в консоль и запись generated/MyClass.cs

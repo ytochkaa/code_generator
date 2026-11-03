@@ -15,21 +15,13 @@ public:
     }
 
     /**
-     * @brief Возвращает ключевое слово доступа Java для модификатора.
+     * @brief Возвращает ключевое слово доступа Java для модификатора (с пробелом).
      *
-     * Для package-private доступа и незаданного модификатора возвращает
-     * пустую строку.
+     * Для package-private доступа (INTERNAL) возвращает пустую строку.
      */
     static std::string accessModifierToString(int accessModifier);
 
     std::string compile(unsigned int level = 0) const override;
-
-private:
-    /**
-     * @brief Проверяет модификаторы класса и его методов по правилам Java.
-     * @throw std::logic_error при недопустимом сочетании.
-     */
-    void check(unsigned int level) const;
 };
 
 /**
@@ -44,13 +36,6 @@ public:
     }
 
     std::string compile(unsigned int level = 0) const override;
-
-private:
-    /**
-     * @brief Проверяет модификаторы метода по правилам Java.
-     * @throw std::logic_error при недопустимом сочетании.
-     */
-    void check() const;
 };
 
 /**
