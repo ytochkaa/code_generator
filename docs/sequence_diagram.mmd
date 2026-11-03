@@ -1,0 +1,51 @@
+sequenceDiagram
+    participant M as main
+    participant G as generateProgram
+    participant F as CSharpFactory
+    participant C as CSharpClassUnit
+    participant Me as CSharpMethodUnit
+    participant P as CSharpPrintOperatorUnit
+
+    M->>G: generateProgram(factory)
+    activate G
+    Note over G: знает только интерфейсы Factory и Unit
+
+    G->>F: createClass("MyClass", ABSTRACT)
+    F-->>G: новый CSharpClassUnit
+    G->>C: setAccessModifier(PUBLIC)
+
+    G->>F: createMethod("testFunc4", "void", STATIC)
+    F-->>G: новый CSharpMethodUnit
+    G->>F: createPrintOperator("Hello, world!\n")
+    F-->>G: новый CSharpPrintOperatorUnit
+    G->>Me: add(printOperator)
+    G->>C: add(method, PROTECTED)
+    C->>Me: setAccessModifier(PROTECTED)
+
+    G->>C: compile()
+    activate C
+    C->>C: check(level): правила C# для класса
+    loop для каждого метода в порядке секций доступа
+        C->>Me: compile(level + 1)
+        activate Me
+        Me->>Me: check(): правила C# для метода
+        loop для каждого оператора тела
+            Me->>P: compile(level + 1)
+            P-->>Me: Console.Write("...")
+        end
+        Me-->>C: код метода
+        deactivate Me
+    end
+    C-->>G: код класса
+    deactivate C
+
+    G->>F: wrapProgram(classCode)
+    F-->>G: using System, классы и class Program
+    G-->>M: текст программы
+    deactivate G
+
+    alt модификаторы допустимы
+        M->>M: вывод в консоль и запись generated/MyClass.cs
+    else compile выбросил std::logic_error
+        M->>M: вывод «Ошибка генерации MyClass.cs: ...», файл не создаётся
+    end

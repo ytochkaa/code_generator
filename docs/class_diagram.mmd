@@ -1,0 +1,122 @@
+classDiagram
+    class Unit {
+        <<abstract>>
+        +NO_ACCESS : int
+        #m_accessModifier : int
+        +add(unit : Unit, flags : Flags) void
+        +compile(level : unsigned int) string*
+        +setAccessModifier(accessModifier : int) void
+        +accessModifier() int
+        #generateShift(level : unsigned int) string
+    }
+
+    class ClassUnit {
+        <<abstract>>
+        #m_name : string
+        #m_flags : Flags
+        #m_parent : string
+        #m_fields : map~int, Fields~
+        +ClassUnit(name : string, flags : Flags)
+        +setParent(parent : string) void
+        +add(unit : Unit, flags : Flags) void
+        #checkCommonFlags(language : string) void
+        #methods() vector~MethodUnit~
+    }
+
+    class MethodUnit {
+        <<abstract>>
+        #m_name : string
+        #m_returnType : string
+        #m_flags : Flags
+        #m_body : vector~Unit~
+        +MethodUnit(name : string, returnType : string, flags : Flags)
+        +add(unit : Unit, flags : Flags) void
+        +name() string
+        +flags() Flags
+        #checkCommonFlags(language : string) void
+        #compileBody(level : unsigned int) string
+    }
+
+    class PrintOperatorUnit {
+        <<abstract>>
+        #m_text : string
+        +PrintOperatorUnit(text : string)
+    }
+
+    class Factory {
+        <<interface>>
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+
+    class CppFactory
+    class CSharpFactory
+    class JavaFactory
+
+    class CppClassUnit {
+        +compile(level : unsigned int) string
+    }
+    class CSharpClassUnit {
+        +accessModifierToString(accessModifier : int) string$
+        +compile(level : unsigned int) string
+        -check(level : unsigned int) void
+    }
+    class JavaClassUnit {
+        +accessModifierToString(accessModifier : int) string$
+        +compile(level : unsigned int) string
+        -check(level : unsigned int) void
+    }
+
+    class CppMethodUnit {
+        +compile(level : unsigned int) string
+    }
+    class CSharpMethodUnit {
+        +compile(level : unsigned int) string
+        -check() void
+    }
+    class JavaMethodUnit {
+        +compile(level : unsigned int) string
+        -check() void
+    }
+
+    class CppPrintOperatorUnit {
+        +compile(level : unsigned int) string
+    }
+    class CSharpPrintOperatorUnit {
+        +compile(level : unsigned int) string
+    }
+    class JavaPrintOperatorUnit {
+        +compile(level : unsigned int) string
+    }
+
+    Unit <|-- ClassUnit
+    Unit <|-- MethodUnit
+    Unit <|-- PrintOperatorUnit
+    ClassUnit "1" o-- "0..*" Unit : m_fields
+    MethodUnit "1" o-- "0..*" Unit : m_body
+
+    ClassUnit <|-- CppClassUnit
+    ClassUnit <|-- CSharpClassUnit
+    ClassUnit <|-- JavaClassUnit
+    MethodUnit <|-- CppMethodUnit
+    MethodUnit <|-- CSharpMethodUnit
+    MethodUnit <|-- JavaMethodUnit
+    PrintOperatorUnit <|-- CppPrintOperatorUnit
+    PrintOperatorUnit <|-- CSharpPrintOperatorUnit
+    PrintOperatorUnit <|-- JavaPrintOperatorUnit
+
+    Factory <|.. CppFactory
+    Factory <|.. CSharpFactory
+    Factory <|.. JavaFactory
+    CppFactory ..> CppClassUnit : create
+    CppFactory ..> CppMethodUnit : create
+    CppFactory ..> CppPrintOperatorUnit : create
+    CSharpFactory ..> CSharpClassUnit : create
+    CSharpFactory ..> CSharpMethodUnit : create
+    CSharpFactory ..> CSharpPrintOperatorUnit : create
+    JavaFactory ..> JavaClassUnit : create
+    JavaFactory ..> JavaMethodUnit : create
+    JavaFactory ..> JavaPrintOperatorUnit : create

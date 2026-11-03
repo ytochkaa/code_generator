@@ -34,6 +34,7 @@ code_generator/
 ├── cppfactory.h/.cpp      элементы и фабрика C++
 ├── csharpfactory.h/.cpp   элементы и фабрика C#
 ├── javafactory.h/.cpp     элементы и фабрика Java
+├── docs/                  исходники UML-диаграмм (.mmd)
 └── tests/                 эталоны, автотест и тест-кейсы
 ```
 
@@ -154,7 +155,13 @@ cmake --build .
 
 Входные данные генерации задаются в функции `generateProgram` в `main.cpp`. Сообщения выводятся в UTF-8; в консоли Windows перед запуском выполнить `chcp 65001`.
 
-## Диаграмма классов
+## UML-диаграммы
+
+Исходники диаграмм лежат в папке [`docs`](docs).
+
+### Диаграмма классов
+
+Исходник: [`docs/class_diagram.mmd`](docs/class_diagram.mmd)
 
 ```mermaid
 classDiagram
@@ -284,6 +291,64 @@ classDiagram
 Обозначения: `<|--` — обобщение (наследование), `<|..` — реализация интерфейса,
 `o--` — агрегация (элемент хранит вложенные элементы), `..>` — зависимость (фабрика создаёт элемент);
 в кавычках указана кратность концов связей.
+
+### Диаграмма последовательности
+
+Сценарий «генерация программы на C#»: `generateProgram` создаёт элементы только через фабрику, каждый элемент проверяет модификаторы и генерирует свой код. Для C++ и Java сценарий тот же, меняются только классы элементов. Исходник: [`docs/sequence_diagram.mmd`](docs/sequence_diagram.mmd)
+
+```mermaid
+sequenceDiagram
+    participant M as main
+    participant G as generateProgram
+    participant F as CSharpFactory
+    participant C as CSharpClassUnit
+    participant Me as CSharpMethodUnit
+    participant P as CSharpPrintOperatorUnit
+
+    M->>G: generateProgram(factory)
+    activate G
+    Note over G: знает только интерфейсы Factory и Unit
+
+    G->>F: createClass("MyClass", ABSTRACT)
+    F-->>G: новый CSharpClassUnit
+    G->>C: setAccessModifier(PUBLIC)
+
+    G->>F: createMethod("testFunc4", "void", STATIC)
+    F-->>G: новый CSharpMethodUnit
+    G->>F: createPrintOperator("Hello, world!\n")
+    F-->>G: новый CSharpPrintOperatorUnit
+    G->>Me: add(printOperator)
+    G->>C: add(method, PROTECTED)
+    C->>Me: setAccessModifier(PROTECTED)
+
+    G->>C: compile()
+    activate C
+    C->>C: check(level): правила C# для класса
+    loop для каждого метода в порядке секций доступа
+        C->>Me: compile(level + 1)
+        activate Me
+        Me->>Me: check(): правила C# для метода
+        loop для каждого оператора тела
+            Me->>P: compile(level + 1)
+            P-->>Me: Console.Write("...")
+        end
+        Me-->>C: код метода
+        deactivate Me
+    end
+    C-->>G: код класса
+    deactivate C
+
+    G->>F: wrapProgram(classCode)
+    F-->>G: using System, классы и class Program
+    G-->>M: текст программы
+    deactivate G
+
+    alt модификаторы допустимы
+        M->>M: вывод в консоль и запись generated/MyClass.cs
+    else compile выбросил std::logic_error
+        M->>M: вывод «Ошибка генерации MyClass.cs: ...», файл не создаётся
+    end
+```
 
 ## Тестирование
 
