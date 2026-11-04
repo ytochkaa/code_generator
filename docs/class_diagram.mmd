@@ -1,4 +1,19 @@
 classDiagram
+    class main_cpp["main.cpp"] {
+        <<module>>
+        +generateProgram(factory : Factory) string
+        +main() int
+    }
+
+    class Factory {
+        <<interface>>
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+
     class Unit {
         <<abstract>>
         #m_accessModifier : int
@@ -12,9 +27,24 @@ classDiagram
         <<abstract>>
         #m_name : string
         #m_flags : Flags
-        #m_fields : map~int, Fields~
         +ClassUnit(name : string, flags : Flags)
         +add(unit : Unit, flags : Flags) void
+    }
+
+    class AccessModifier["ClassUnit::AccessModifier"] {
+        <<enumeration>>
+        PUBLIC
+        PROTECTED
+        PRIVATE
+        INTERNAL
+        PROTECTED_INTERNAL
+        PRIVATE_PROTECTED
+    }
+
+    class ClassModifier["ClassUnit::Modifier"] {
+        <<enumeration>>
+        ABSTRACT = 1
+        FINAL = 2
     }
 
     class MethodUnit {
@@ -22,10 +52,18 @@ classDiagram
         #m_name : string
         #m_returnType : string
         #m_flags : Flags
-        #m_body : vector~Unit~
         +MethodUnit(name : string, returnType : string, flags : Flags)
         +add(unit : Unit, flags : Flags) void
         #compileBody(level : unsigned int) string
+    }
+
+    class MethodModifier["MethodUnit::Modifier"] {
+        <<enumeration>>
+        STATIC = 1
+        CONST = 2
+        VIRTUAL = 4
+        ABSTRACT = 8
+        FINAL = 16
     }
 
     class PrintOperatorUnit {
@@ -34,8 +72,21 @@ classDiagram
         +PrintOperatorUnit(text : string)
     }
 
-    class Factory {
-        <<interface>>
+    class CppFactory {
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+    class CSharpFactory {
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+    class JavaFactory {
         +createClass(name : string, flags : Flags) ClassUnit
         +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
         +createPrintOperator(text : string) PrintOperatorUnit
@@ -43,47 +94,72 @@ classDiagram
         +fileName() string
     }
 
-    class CppFactory
-    class CSharpFactory
-    class JavaFactory
-
     class CppClassUnit {
+        +CppClassUnit(name : string, flags : Flags)
         +compile(level : unsigned int) string
     }
     class CSharpClassUnit {
+        +CSharpClassUnit(name : string, flags : Flags)
         +accessModifierToString(accessModifier : int) string$
         +compile(level : unsigned int) string
     }
     class JavaClassUnit {
+        +JavaClassUnit(name : string, flags : Flags)
         +accessModifierToString(accessModifier : int) string$
         +compile(level : unsigned int) string
     }
 
     class CppMethodUnit {
+        +CppMethodUnit(name : string, returnType : string, flags : Flags)
         +compile(level : unsigned int) string
     }
     class CSharpMethodUnit {
+        +CSharpMethodUnit(name : string, returnType : string, flags : Flags)
         +compile(level : unsigned int) string
     }
     class JavaMethodUnit {
+        +JavaMethodUnit(name : string, returnType : string, flags : Flags)
         +compile(level : unsigned int) string
     }
 
     class CppPrintOperatorUnit {
+        +CppPrintOperatorUnit(text : string)
         +compile(level : unsigned int) string
     }
     class CSharpPrintOperatorUnit {
+        +CSharpPrintOperatorUnit(text : string)
         +compile(level : unsigned int) string
     }
     class JavaPrintOperatorUnit {
+        +JavaPrintOperatorUnit(text : string)
         +compile(level : unsigned int) string
     }
+
+    note for main_cpp "main() создаёт CppFactory, CSharpFactory, JavaFactory\nи для каждой вызывает generateProgram"
+    note for Unit "Flags = unsigned int"
+    note for CppFactory "создаёт CppClassUnit, CppMethodUnit, CppPrintOperatorUnit"
+    note for CSharpFactory "создаёт CSharpClassUnit, CSharpMethodUnit, CSharpPrintOperatorUnit"
+    note for JavaFactory "создаёт JavaClassUnit, JavaMethodUnit, JavaPrintOperatorUnit"
+
+    main_cpp ..> Factory : use
+    main_cpp ..> ClassUnit : use
+    main_cpp ..> MethodUnit : use
+
+    Factory ..> ClassUnit : create
+    Factory ..> MethodUnit : create
+    Factory ..> PrintOperatorUnit : create
+    Factory <|.. CppFactory
+    Factory <|.. CSharpFactory
+    Factory <|.. JavaFactory
 
     Unit <|-- ClassUnit
     Unit <|-- MethodUnit
     Unit <|-- PrintOperatorUnit
     ClassUnit "1" o-- "0..*" Unit : m_fields
     MethodUnit "1" o-- "0..*" Unit : m_body
+    ClassUnit ..> AccessModifier : use
+    ClassUnit ..> ClassModifier : use
+    MethodUnit ..> MethodModifier : use
 
     ClassUnit <|-- CppClassUnit
     ClassUnit <|-- CSharpClassUnit
@@ -95,15 +171,5 @@ classDiagram
     PrintOperatorUnit <|-- CSharpPrintOperatorUnit
     PrintOperatorUnit <|-- JavaPrintOperatorUnit
 
-    Factory <|.. CppFactory
-    Factory <|.. CSharpFactory
-    Factory <|.. JavaFactory
-    CppFactory ..> CppClassUnit : create
-    CppFactory ..> CppMethodUnit : create
-    CppFactory ..> CppPrintOperatorUnit : create
-    CSharpFactory ..> CSharpClassUnit : create
-    CSharpFactory ..> CSharpMethodUnit : create
-    CSharpFactory ..> CSharpPrintOperatorUnit : create
-    JavaFactory ..> JavaClassUnit : create
-    JavaFactory ..> JavaMethodUnit : create
-    JavaFactory ..> JavaPrintOperatorUnit : create
+    CSharpMethodUnit ..> CSharpClassUnit : accessModifierToString
+    JavaMethodUnit ..> JavaClassUnit : accessModifierToString

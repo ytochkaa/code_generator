@@ -1,35 +1,53 @@
 sequenceDiagram
     participant M as main
     participant G as generateProgram
-    participant F as CSharpFactory
-    participant C as CSharpClassUnit
-    participant Me as CSharpMethodUnit
-    participant P as CSharpPrintOperatorUnit
 
+    create participant F as CSharpFactory
+    M->>F: создание фабрики
     M->>G: generateProgram(factory)
     activate G
     Note over G: знает только интерфейсы Factory и Unit
 
     G->>F: createClass("MyClass", ABSTRACT)
-    F-->>G: новый CSharpClassUnit
+    activate F
+    create participant C as CSharpClassUnit
+    F->>C: создание
+    F-->>G: ClassUnit
+    deactivate F
     G->>C: setAccessModifier(PUBLIC)
 
+    Note over G,C: testFunc1–3 и testFunc5–8 создаются и добавляются так же, но без тела
+
     G->>F: createMethod("testFunc4", "void", STATIC)
-    F-->>G: новый CSharpMethodUnit
+    activate F
+    create participant Me as CSharpMethodUnit
+    F->>Me: создание
+    F-->>G: MethodUnit
+    deactivate F
+
     G->>F: createPrintOperator("Hello, world!\n")
-    F-->>G: новый CSharpPrintOperatorUnit
+    activate F
+    create participant P as CSharpPrintOperatorUnit
+    F->>P: создание
+    F-->>G: PrintOperatorUnit
+    deactivate F
+
     G->>Me: add(printOperator)
     G->>C: add(method, PROTECTED)
     C->>Me: setAccessModifier(PROTECTED)
 
-    G->>C: compile()
+    G->>C: compile(0)
     activate C
+    Note over C: заголовок «public abstract class MyClass»
     loop для каждого метода в порядке секций доступа
-        C->>Me: compile(level + 1)
+        C->>Me: compile(1)
         activate Me
+        Me->>C: CSharpClassUnit::accessModifierToString(PROTECTED)
+        C-->>Me: "protected"
+        Me->>Me: compileBody(1)
         loop для каждого оператора тела
-            Me->>P: compile(level + 1)
-            P-->>Me: Console.Write("...")
+            Me->>P: compile(2)
+            P-->>Me: Console.Write("Hello, world!\n")
         end
         Me-->>C: код метода
         deactivate Me
@@ -38,8 +56,11 @@ sequenceDiagram
     deactivate C
 
     G->>F: wrapProgram(classCode)
+    activate F
     F-->>G: using System, класс и class Program
+    deactivate F
     G-->>M: текст программы
     deactivate G
 
     M->>M: вывод в консоль и запись generated/MyClass.cs
+    Note over M,G: то же самое выполняется для CppFactory и JavaFactory

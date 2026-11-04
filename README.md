@@ -125,6 +125,21 @@ cmake --build .
 
 ```mermaid
 classDiagram
+    class main_cpp["main.cpp"] {
+        <<module>>
+        +generateProgram(factory : Factory) string
+        +main() int
+    }
+
+    class Factory {
+        <<interface>>
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+
     class Unit {
         <<abstract>>
         #m_accessModifier : int
@@ -138,9 +153,24 @@ classDiagram
         <<abstract>>
         #m_name : string
         #m_flags : Flags
-        #m_fields : map~int, Fields~
         +ClassUnit(name : string, flags : Flags)
         +add(unit : Unit, flags : Flags) void
+    }
+
+    class AccessModifier["ClassUnit::AccessModifier"] {
+        <<enumeration>>
+        PUBLIC
+        PROTECTED
+        PRIVATE
+        INTERNAL
+        PROTECTED_INTERNAL
+        PRIVATE_PROTECTED
+    }
+
+    class ClassModifier["ClassUnit::Modifier"] {
+        <<enumeration>>
+        ABSTRACT = 1
+        FINAL = 2
     }
 
     class MethodUnit {
@@ -148,10 +178,18 @@ classDiagram
         #m_name : string
         #m_returnType : string
         #m_flags : Flags
-        #m_body : vector~Unit~
         +MethodUnit(name : string, returnType : string, flags : Flags)
         +add(unit : Unit, flags : Flags) void
         #compileBody(level : unsigned int) string
+    }
+
+    class MethodModifier["MethodUnit::Modifier"] {
+        <<enumeration>>
+        STATIC = 1
+        CONST = 2
+        VIRTUAL = 4
+        ABSTRACT = 8
+        FINAL = 16
     }
 
     class PrintOperatorUnit {
@@ -160,8 +198,21 @@ classDiagram
         +PrintOperatorUnit(text : string)
     }
 
-    class Factory {
-        <<interface>>
+    class CppFactory {
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+    class CSharpFactory {
+        +createClass(name : string, flags : Flags) ClassUnit
+        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+        +createPrintOperator(text : string) PrintOperatorUnit
+        +wrapProgram(classCode : string) string
+        +fileName() string
+    }
+    class JavaFactory {
         +createClass(name : string, flags : Flags) ClassUnit
         +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
         +createPrintOperator(text : string) PrintOperatorUnit
@@ -169,47 +220,72 @@ classDiagram
         +fileName() string
     }
 
-    class CppFactory
-    class CSharpFactory
-    class JavaFactory
-
     class CppClassUnit {
+        +CppClassUnit(name : string, flags : Flags)
         +compile(level : unsigned int) string
     }
     class CSharpClassUnit {
+        +CSharpClassUnit(name : string, flags : Flags)
         +accessModifierToString(accessModifier : int) string$
         +compile(level : unsigned int) string
     }
     class JavaClassUnit {
+        +JavaClassUnit(name : string, flags : Flags)
         +accessModifierToString(accessModifier : int) string$
         +compile(level : unsigned int) string
     }
 
     class CppMethodUnit {
+        +CppMethodUnit(name : string, returnType : string, flags : Flags)
         +compile(level : unsigned int) string
     }
     class CSharpMethodUnit {
+        +CSharpMethodUnit(name : string, returnType : string, flags : Flags)
         +compile(level : unsigned int) string
     }
     class JavaMethodUnit {
+        +JavaMethodUnit(name : string, returnType : string, flags : Flags)
         +compile(level : unsigned int) string
     }
 
     class CppPrintOperatorUnit {
+        +CppPrintOperatorUnit(text : string)
         +compile(level : unsigned int) string
     }
     class CSharpPrintOperatorUnit {
+        +CSharpPrintOperatorUnit(text : string)
         +compile(level : unsigned int) string
     }
     class JavaPrintOperatorUnit {
+        +JavaPrintOperatorUnit(text : string)
         +compile(level : unsigned int) string
     }
+
+    note for main_cpp "main() создаёт CppFactory, CSharpFactory, JavaFactory\nи для каждой вызывает generateProgram"
+    note for Unit "Flags = unsigned int"
+    note for CppFactory "создаёт CppClassUnit, CppMethodUnit, CppPrintOperatorUnit"
+    note for CSharpFactory "создаёт CSharpClassUnit, CSharpMethodUnit, CSharpPrintOperatorUnit"
+    note for JavaFactory "создаёт JavaClassUnit, JavaMethodUnit, JavaPrintOperatorUnit"
+
+    main_cpp ..> Factory : use
+    main_cpp ..> ClassUnit : use
+    main_cpp ..> MethodUnit : use
+
+    Factory ..> ClassUnit : create
+    Factory ..> MethodUnit : create
+    Factory ..> PrintOperatorUnit : create
+    Factory <|.. CppFactory
+    Factory <|.. CSharpFactory
+    Factory <|.. JavaFactory
 
     Unit <|-- ClassUnit
     Unit <|-- MethodUnit
     Unit <|-- PrintOperatorUnit
     ClassUnit "1" o-- "0..*" Unit : m_fields
     MethodUnit "1" o-- "0..*" Unit : m_body
+    ClassUnit ..> AccessModifier : use
+    ClassUnit ..> ClassModifier : use
+    MethodUnit ..> MethodModifier : use
 
     ClassUnit <|-- CppClassUnit
     ClassUnit <|-- CSharpClassUnit
@@ -221,23 +297,14 @@ classDiagram
     PrintOperatorUnit <|-- CSharpPrintOperatorUnit
     PrintOperatorUnit <|-- JavaPrintOperatorUnit
 
-    Factory <|.. CppFactory
-    Factory <|.. CSharpFactory
-    Factory <|.. JavaFactory
-    CppFactory ..> CppClassUnit : create
-    CppFactory ..> CppMethodUnit : create
-    CppFactory ..> CppPrintOperatorUnit : create
-    CSharpFactory ..> CSharpClassUnit : create
-    CSharpFactory ..> CSharpMethodUnit : create
-    CSharpFactory ..> CSharpPrintOperatorUnit : create
-    JavaFactory ..> JavaClassUnit : create
-    JavaFactory ..> JavaMethodUnit : create
-    JavaFactory ..> JavaPrintOperatorUnit : create
+    CSharpMethodUnit ..> CSharpClassUnit : accessModifierToString
+    JavaMethodUnit ..> JavaClassUnit : accessModifierToString
 ```
 
 Обозначения: `<|--` — обобщение (наследование), `<|..` — реализация интерфейса,
-`o--` — агрегация (элемент хранит вложенные элементы), `..>` — зависимость (фабрика создаёт элемент);
-в кавычках указана кратность концов связей.
+`o--` — агрегация (элемент хранит вложенные элементы), `..>` — зависимость (`use` — использует,
+`create` — создаёт); в кавычках указана кратность концов связей. `«enumeration»` — перечисления флагов,
+`«module»` — свободные функции файла `main.cpp`; в заметках указано, какие элементы создаёт каждая конкретная фабрика.
 
 ### Диаграмма последовательности
 
@@ -247,35 +314,53 @@ classDiagram
 sequenceDiagram
     participant M as main
     participant G as generateProgram
-    participant F as CSharpFactory
-    participant C as CSharpClassUnit
-    participant Me as CSharpMethodUnit
-    participant P as CSharpPrintOperatorUnit
 
+    create participant F as CSharpFactory
+    M->>F: создание фабрики
     M->>G: generateProgram(factory)
     activate G
     Note over G: знает только интерфейсы Factory и Unit
 
     G->>F: createClass("MyClass", ABSTRACT)
-    F-->>G: новый CSharpClassUnit
+    activate F
+    create participant C as CSharpClassUnit
+    F->>C: создание
+    F-->>G: ClassUnit
+    deactivate F
     G->>C: setAccessModifier(PUBLIC)
 
+    Note over G,C: testFunc1–3 и testFunc5–8 создаются и добавляются так же, но без тела
+
     G->>F: createMethod("testFunc4", "void", STATIC)
-    F-->>G: новый CSharpMethodUnit
+    activate F
+    create participant Me as CSharpMethodUnit
+    F->>Me: создание
+    F-->>G: MethodUnit
+    deactivate F
+
     G->>F: createPrintOperator("Hello, world!\n")
-    F-->>G: новый CSharpPrintOperatorUnit
+    activate F
+    create participant P as CSharpPrintOperatorUnit
+    F->>P: создание
+    F-->>G: PrintOperatorUnit
+    deactivate F
+
     G->>Me: add(printOperator)
     G->>C: add(method, PROTECTED)
     C->>Me: setAccessModifier(PROTECTED)
 
-    G->>C: compile()
+    G->>C: compile(0)
     activate C
+    Note over C: заголовок «public abstract class MyClass»
     loop для каждого метода в порядке секций доступа
-        C->>Me: compile(level + 1)
+        C->>Me: compile(1)
         activate Me
+        Me->>C: CSharpClassUnit::accessModifierToString(PROTECTED)
+        C-->>Me: "protected"
+        Me->>Me: compileBody(1)
         loop для каждого оператора тела
-            Me->>P: compile(level + 1)
-            P-->>Me: Console.Write("...")
+            Me->>P: compile(2)
+            P-->>Me: Console.Write("Hello, world!\n")
         end
         Me-->>C: код метода
         deactivate Me
@@ -284,11 +369,14 @@ sequenceDiagram
     deactivate C
 
     G->>F: wrapProgram(classCode)
+    activate F
     F-->>G: using System, класс и class Program
+    deactivate F
     G-->>M: текст программы
     deactivate G
 
     M->>M: вывод в консоль и запись generated/MyClass.cs
+    Note over M,G: то же самое выполняется для CppFactory и JavaFactory
 ```
 
 ## Тестирование
