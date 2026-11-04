@@ -1,12 +1,9 @@
 sequenceDiagram
-    participant M as main
     participant G as generateProgram
+    participant F as CSharpFactory
 
-    create participant F as CSharpFactory
-    M->>F: создание фабрики
-    M->>G: generateProgram(factory)
     activate G
-    Note over G: знает только интерфейсы Factory и Unit
+    Note over G,F: generateProgram получила фабрику C# и знает только интерфейсы Factory и Unit
 
     G->>F: createClass("MyClass", ABSTRACT)
     activate F
@@ -59,8 +56,5 @@ sequenceDiagram
     activate F
     F-->>G: using System, класс и class Program
     deactivate F
-    G-->>M: текст программы
+    Note over G: возвращает текст программы
     deactivate G
-
-    M->>M: вывод в консоль и запись generated/MyClass.cs
-    Note over M,G: то же самое выполняется для CppFactory и JavaFactory

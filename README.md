@@ -125,36 +125,48 @@ cmake --build .
 
 ```mermaid
 classDiagram
-    class main_cpp["main.cpp"] {
-        <<module>>
-        +generateProgram(factory : Factory) string
-        +main() int
-    }
+    namespace common {
+        class Factory {
+            <<interface>>
+            +createClass(name : string, flags : Flags) ClassUnit
+            +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+            +createPrintOperator(text : string) PrintOperatorUnit
+            +wrapProgram(classCode : string) string
+            +fileName() string
+        }
 
-    class Factory {
-        <<interface>>
-        +createClass(name : string, flags : Flags) ClassUnit
-        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
-        +createPrintOperator(text : string) PrintOperatorUnit
-        +wrapProgram(classCode : string) string
-        +fileName() string
-    }
+        class Unit {
+            <<abstract>>
+            #m_accessModifier : int
+            +add(unit : Unit, flags : Flags) void
+            +compile(level : unsigned int) string*
+            +setAccessModifier(accessModifier : int) void
+            #generateShift(level : unsigned int) string
+        }
 
-    class Unit {
-        <<abstract>>
-        #m_accessModifier : int
-        +add(unit : Unit, flags : Flags) void
-        +compile(level : unsigned int) string*
-        +setAccessModifier(accessModifier : int) void
-        #generateShift(level : unsigned int) string
-    }
+        class ClassUnit {
+            <<abstract>>
+            #m_name : string
+            #m_flags : Flags
+            +ClassUnit(name : string, flags : Flags)
+            +add(unit : Unit, flags : Flags) void
+        }
 
-    class ClassUnit {
-        <<abstract>>
-        #m_name : string
-        #m_flags : Flags
-        +ClassUnit(name : string, flags : Flags)
-        +add(unit : Unit, flags : Flags) void
+        class MethodUnit {
+            <<abstract>>
+            #m_name : string
+            #m_returnType : string
+            #m_flags : Flags
+            +MethodUnit(name : string, returnType : string, flags : Flags)
+            +add(unit : Unit, flags : Flags) void
+            #compileBody(level : unsigned int) string
+        }
+
+        class PrintOperatorUnit {
+            <<abstract>>
+            #m_text : string
+            +PrintOperatorUnit(text : string)
+        }
     }
 
     class AccessModifier["ClassUnit::AccessModifier"] {
@@ -173,16 +185,6 @@ classDiagram
         FINAL = 2
     }
 
-    class MethodUnit {
-        <<abstract>>
-        #m_name : string
-        #m_returnType : string
-        #m_flags : Flags
-        +MethodUnit(name : string, returnType : string, flags : Flags)
-        +add(unit : Unit, flags : Flags) void
-        #compileBody(level : unsigned int) string
-    }
-
     class MethodModifier["MethodUnit::Modifier"] {
         <<enumeration>>
         STATIC = 1
@@ -192,88 +194,76 @@ classDiagram
         FINAL = 16
     }
 
-    class PrintOperatorUnit {
-        <<abstract>>
-        #m_text : string
-        +PrintOperatorUnit(text : string)
+    namespace cpp {
+        class CppFactory {
+            +createClass(name : string, flags : Flags) ClassUnit
+            +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+            +createPrintOperator(text : string) PrintOperatorUnit
+            +wrapProgram(classCode : string) string
+            +fileName() string
+        }
+        class CppClassUnit {
+            +CppClassUnit(name : string, flags : Flags)
+            +compile(level : unsigned int) string
+        }
+        class CppMethodUnit {
+            +CppMethodUnit(name : string, returnType : string, flags : Flags)
+            +compile(level : unsigned int) string
+        }
+        class CppPrintOperatorUnit {
+            +CppPrintOperatorUnit(text : string)
+            +compile(level : unsigned int) string
+        }
     }
 
-    class CppFactory {
-        +createClass(name : string, flags : Flags) ClassUnit
-        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
-        +createPrintOperator(text : string) PrintOperatorUnit
-        +wrapProgram(classCode : string) string
-        +fileName() string
-    }
-    class CSharpFactory {
-        +createClass(name : string, flags : Flags) ClassUnit
-        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
-        +createPrintOperator(text : string) PrintOperatorUnit
-        +wrapProgram(classCode : string) string
-        +fileName() string
-    }
-    class JavaFactory {
-        +createClass(name : string, flags : Flags) ClassUnit
-        +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
-        +createPrintOperator(text : string) PrintOperatorUnit
-        +wrapProgram(classCode : string) string
-        +fileName() string
-    }
-
-    class CppClassUnit {
-        +CppClassUnit(name : string, flags : Flags)
-        +compile(level : unsigned int) string
-    }
-    class CSharpClassUnit {
-        +CSharpClassUnit(name : string, flags : Flags)
-        +accessModifierToString(accessModifier : int) string$
-        +compile(level : unsigned int) string
-    }
-    class JavaClassUnit {
-        +JavaClassUnit(name : string, flags : Flags)
-        +accessModifierToString(accessModifier : int) string$
-        +compile(level : unsigned int) string
+    namespace csharp {
+        class CSharpFactory {
+            +createClass(name : string, flags : Flags) ClassUnit
+            +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+            +createPrintOperator(text : string) PrintOperatorUnit
+            +wrapProgram(classCode : string) string
+            +fileName() string
+        }
+        class CSharpClassUnit {
+            +CSharpClassUnit(name : string, flags : Flags)
+            +accessModifierToString(accessModifier : int) string$
+            +compile(level : unsigned int) string
+        }
+        class CSharpMethodUnit {
+            +CSharpMethodUnit(name : string, returnType : string, flags : Flags)
+            +compile(level : unsigned int) string
+        }
+        class CSharpPrintOperatorUnit {
+            +CSharpPrintOperatorUnit(text : string)
+            +compile(level : unsigned int) string
+        }
     }
 
-    class CppMethodUnit {
-        +CppMethodUnit(name : string, returnType : string, flags : Flags)
-        +compile(level : unsigned int) string
-    }
-    class CSharpMethodUnit {
-        +CSharpMethodUnit(name : string, returnType : string, flags : Flags)
-        +compile(level : unsigned int) string
-    }
-    class JavaMethodUnit {
-        +JavaMethodUnit(name : string, returnType : string, flags : Flags)
-        +compile(level : unsigned int) string
-    }
-
-    class CppPrintOperatorUnit {
-        +CppPrintOperatorUnit(text : string)
-        +compile(level : unsigned int) string
-    }
-    class CSharpPrintOperatorUnit {
-        +CSharpPrintOperatorUnit(text : string)
-        +compile(level : unsigned int) string
-    }
-    class JavaPrintOperatorUnit {
-        +JavaPrintOperatorUnit(text : string)
-        +compile(level : unsigned int) string
+    namespace java {
+        class JavaFactory {
+            +createClass(name : string, flags : Flags) ClassUnit
+            +createMethod(name : string, returnType : string, flags : Flags) MethodUnit
+            +createPrintOperator(text : string) PrintOperatorUnit
+            +wrapProgram(classCode : string) string
+            +fileName() string
+        }
+        class JavaClassUnit {
+            +JavaClassUnit(name : string, flags : Flags)
+            +accessModifierToString(accessModifier : int) string$
+            +compile(level : unsigned int) string
+        }
+        class JavaMethodUnit {
+            +JavaMethodUnit(name : string, returnType : string, flags : Flags)
+            +compile(level : unsigned int) string
+        }
+        class JavaPrintOperatorUnit {
+            +JavaPrintOperatorUnit(text : string)
+            +compile(level : unsigned int) string
+        }
     }
 
-    note for main_cpp "main() создаёт CppFactory, CSharpFactory, JavaFactory\nи для каждой вызывает generateProgram"
     note for Unit "Flags = unsigned int"
-    note for CppFactory "создаёт CppClassUnit, CppMethodUnit, CppPrintOperatorUnit"
-    note for CSharpFactory "создаёт CSharpClassUnit, CSharpMethodUnit, CSharpPrintOperatorUnit"
-    note for JavaFactory "создаёт JavaClassUnit, JavaMethodUnit, JavaPrintOperatorUnit"
 
-    main_cpp ..> Factory : use
-    main_cpp ..> ClassUnit : use
-    main_cpp ..> MethodUnit : use
-
-    Factory ..> ClassUnit : create
-    Factory ..> MethodUnit : create
-    Factory ..> PrintOperatorUnit : create
     Factory <|.. CppFactory
     Factory <|.. CSharpFactory
     Factory <|.. JavaFactory
@@ -288,14 +278,24 @@ classDiagram
     MethodUnit ..> MethodModifier : use
 
     ClassUnit <|-- CppClassUnit
-    ClassUnit <|-- CSharpClassUnit
-    ClassUnit <|-- JavaClassUnit
     MethodUnit <|-- CppMethodUnit
-    MethodUnit <|-- CSharpMethodUnit
-    MethodUnit <|-- JavaMethodUnit
     PrintOperatorUnit <|-- CppPrintOperatorUnit
+    ClassUnit <|-- CSharpClassUnit
+    MethodUnit <|-- CSharpMethodUnit
     PrintOperatorUnit <|-- CSharpPrintOperatorUnit
+    ClassUnit <|-- JavaClassUnit
+    MethodUnit <|-- JavaMethodUnit
     PrintOperatorUnit <|-- JavaPrintOperatorUnit
+
+    CppFactory ..> CppClassUnit : create
+    CppFactory ..> CppMethodUnit : create
+    CppFactory ..> CppPrintOperatorUnit : create
+    CSharpFactory ..> CSharpClassUnit : create
+    CSharpFactory ..> CSharpMethodUnit : create
+    CSharpFactory ..> CSharpPrintOperatorUnit : create
+    JavaFactory ..> JavaClassUnit : create
+    JavaFactory ..> JavaMethodUnit : create
+    JavaFactory ..> JavaPrintOperatorUnit : create
 
     CSharpMethodUnit ..> CSharpClassUnit : accessModifierToString
     JavaMethodUnit ..> JavaClassUnit : accessModifierToString
@@ -303,22 +303,18 @@ classDiagram
 
 Обозначения: `<|--` — обобщение (наследование), `<|..` — реализация интерфейса,
 `o--` — агрегация (элемент хранит вложенные элементы), `..>` — зависимость (`use` — использует,
-`create` — создаёт); в кавычках указана кратность концов связей. `«enumeration»` — перечисления флагов,
-`«module»` — свободные функции файла `main.cpp`; в заметках указано, какие элементы создаёт каждая конкретная фабрика.
+`create` — фабрика создаёт элемент); в кавычках указана кратность концов связей. `«enumeration»` — перечисления флагов.
+Классы сгруппированы по пространствам имён: `common` — абстрактная фабрика и абстрактные элементы,
+`cpp`, `csharp`, `java` — фабрика и элементы одного языка.
 
 #### Описание элементов
-
-**Клиент**
-- **`main.cpp`** — свободные функции программы.
-  - `generateProgram(factory)` — строит дерево элементов класса `MyClass` и возвращает готовую программу. Работает только через интерфейс `Factory` и абстрактные элементы, поэтому не знает целевого языка.
-  - `main()` — создаёт три фабрики, для каждой вызывает `generateProgram`, печатает результат и сохраняет его в `generated/<fileName()>`.
 
 **Абстрактная фабрика**
 - **`Factory`** — интерфейс фабрики элементов одного языка.
   - `createClass`, `createMethod`, `createPrintOperator` — создают элемент «класс», «метод» и «оператор печати» и возвращают его как абстрактный тип;
   - `wrapProgram(classCode)` — оборачивает код класса в законченную программу (подключения, точка входа);
   - `fileName()` — имя файла для сохранения.
-- **`CppFactory`, `CSharpFactory`, `JavaFactory`** — реализации `Factory`. Каждая создаёт элементы только своего языка (см. заметки на диаграмме), то есть выдаёт согласованное семейство объектов.
+- **`CppFactory`, `CSharpFactory`, `JavaFactory`** — реализации `Factory`. Каждая создаёт элементы только своего языка (стрелки `create`): `CppFactory` — `Cpp*`, `CSharpFactory` — `CSharp*`, `JavaFactory` — `Java*`, то есть выдаёт согласованное семейство объектов.
 
 **Абстрактные элементы**
 - **`Unit`** — базовый элемент синтаксиса.
@@ -346,13 +342,13 @@ classDiagram
 
 #### Взаимодействие элементов
 
-- **Клиент и фабрика.** `main` передаёт в `generateProgram` одну из фабрик по ссылке на `Factory`. Клиент вызывает только методы интерфейса и получает абстрактные `ClassUnit`, `MethodUnit`, `PrintOperatorUnit`, а конкретный язык определяется переданной фабрикой во время выполнения.
-- **Фабрика и элементы.** Фабрика создаёт элементы (`create`): интерфейс `Factory` объявляет создание абстрактных элементов, конкретная фабрика создаёт элементы своего языка. Поэтому элементы разных языков не смешиваются в одном дереве.
+- **Использование фабрики.** Код, собирающий класс (функция `generateProgram`), получает фабрику по ссылке на `Factory`, вызывает только методы интерфейса и получает абстрактные `ClassUnit`, `MethodUnit`, `PrintOperatorUnit`. Конкретный язык определяется переданной фабрикой во время выполнения.
+- **Фабрика и элементы.** Интерфейс `Factory` объявляет создание абстрактных элементов, а каждая конкретная фабрика создаёт элементы своего языка (`create`): `CSharpFactory` создаёт `CSharpClassUnit`, `CSharpMethodUnit`, `CSharpPrintOperatorUnit` и т. д. Поэтому элементы разных языков не смешиваются в одном дереве.
 - **Наследование элементов.** Все элементы — наследники `Unit`; языковые классы наследуют общие данные и `add` от `ClassUnit`, `MethodUnit`, `PrintOperatorUnit` и добавляют только `compile`.
 - **Дерево элементов (агрегация).** Класс хранит методы в `m_fields`, метод — операторы в `m_body`. Генерация идёт рекурсивно сверху вниз: `ClassUnit::compile` вызывает `compile` у каждого члена с уровнем на единицу больше, метод — у каждого оператора тела.
 - **Перечисления.** `ClassUnit` и `MethodUnit` используют свои перечисления: флаги задаются в `generateProgram` один раз для всех языков, а `compile` каждого языка решает, что из них вывести.
 - **Метод и класс одного языка.** `CSharpMethodUnit` и `JavaMethodUnit` вызывают статический `accessModifierToString` своего класса, чтобы записать модификатор доступа так же, как у класса.
-- **Добавление нового языка.** Достаточно добавить наследников трёх элементов и `Factory`; клиент, абстрактные элементы и перечисления не меняются.
+- **Добавление нового языка.** Достаточно добавить наследников трёх элементов и `Factory`; `generateProgram`, абстрактные элементы и перечисления не меняются.
 
 ### Диаграмма последовательности
 
@@ -360,14 +356,11 @@ classDiagram
 
 ```mermaid
 sequenceDiagram
-    participant M as main
     participant G as generateProgram
+    participant F as CSharpFactory
 
-    create participant F as CSharpFactory
-    M->>F: создание фабрики
-    M->>G: generateProgram(factory)
     activate G
-    Note over G: знает только интерфейсы Factory и Unit
+    Note over G,F: generateProgram получила фабрику C# и знает только интерфейсы Factory и Unit
 
     G->>F: createClass("MyClass", ABSTRACT)
     activate F
@@ -420,32 +413,28 @@ sequenceDiagram
     activate F
     F-->>G: using System, класс и class Program
     deactivate F
-    G-->>M: текст программы
+    Note over G: возвращает текст программы
     deactivate G
-
-    M->>M: вывод в консоль и запись generated/MyClass.cs
-    Note over M,G: то же самое выполняется для CppFactory и JavaFactory
 ```
 
 #### Описание сценария
 
 **Участники**
-- **`main`** — создаёт фабрику C#, вызывает `generateProgram`, печатает и сохраняет результат.
-- **`generateProgram`** — клиент: собирает класс через фабрику, знает только интерфейсы `Factory` и `Unit`.
+- **`generateProgram`** — собирает класс через фабрику и возвращает текст программы; знает только интерфейсы `Factory` и `Unit`.
 - **`CSharpFactory`** — создаёт элементы C# и оборачивает код класса в программу.
 - **`CSharpClassUnit`** — класс `MyClass`, хранит методы и генерирует код класса.
 - **`CSharpMethodUnit`** — метод `testFunc4`, хранит оператор печати и генерирует код метода.
 - **`CSharpPrintOperatorUnit`** — оператор печати `Hello, world!` в теле метода.
 
 **Ход сценария**
-1. **Создание фабрики.** `main` создаёт `CSharpFactory` и передаёт её в `generateProgram`.
-2. **Создание класса.** `createClass("MyClass", ABSTRACT)` — фабрика создаёт `CSharpClassUnit` и возвращает его как `ClassUnit`. Клиент задаёт классу доступ `PUBLIC`.
-3. **Создание метода и оператора.** `createMethod("testFunc4", "void", STATIC)` и `createPrintOperator(...)` — фабрика создаёт `CSharpMethodUnit` и `CSharpPrintOperatorUnit`. Клиент кладёт оператор в тело метода (`add(printOperator)`).
+1. **Начало.** `generateProgram` получает фабрику `CSharpFactory` по ссылке на `Factory`.
+2. **Создание класса.** `createClass("MyClass", ABSTRACT)` — фабрика создаёт `CSharpClassUnit` и возвращает его как `ClassUnit`. `generateProgram` задаёт классу доступ `PUBLIC`.
+3. **Создание метода и оператора.** `createMethod("testFunc4", "void", STATIC)` и `createPrintOperator(...)` — фабрика создаёт `CSharpMethodUnit` и `CSharpPrintOperatorUnit`. `generateProgram` кладёт оператор в тело метода (`add(printOperator)`).
 4. **Добавление метода в класс.** `add(method, PROTECTED)` — класс помещает метод в секцию `PROTECTED` и вызывает у него `setAccessModifier(PROTECTED)`. Остальные семь методов создаются и добавляются так же.
 5. **Генерация класса.** `compile(0)` — класс выводит заголовок `public abstract class MyClass` и по порядку секций доступа вызывает `compile(1)` у каждого метода.
 6. **Генерация метода.** Метод получает слово `protected` через `CSharpClassUnit::accessModifierToString`, выводит заголовок, затем `compileBody(1)` вызывает `compile(2)` у каждого оператора тела; оператор возвращает `Console.Write("Hello, world!\n")` с отступом уровня 2.
 7. **Сборка программы.** Код класса возвращается клиенту, `wrapProgram` добавляет `using System;` и класс `Program` с `Main`.
-8. **Вывод.** `main` печатает программу в консоль и записывает её в `generated/MyClass.cs`. Затем то же самое выполняется для `CppFactory` и `JavaFactory`.
+8. **Результат.** `generateProgram` возвращает текст программы. Для `CppFactory` и `JavaFactory` сценарий тот же, меняются только классы элементов.
 
 ## Тестирование
 
